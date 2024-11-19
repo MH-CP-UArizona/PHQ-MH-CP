@@ -378,7 +378,6 @@ dumbbell <- prop_table |>
   geom_line() +
   geom_point(size = 2, shape = 21, color = "black", aes(fill = interaction(symptom_labels, severity))) + 
   facet_wrap(~ symptom_labels) +
-  ## one call to labs reduces the code to relabel the axis
   labs(x = NULL, y = "Proportion") + 
   scale_fill_manual(
     values = color_mapping,    # Ensure that color_mapping aligns with severity levels
