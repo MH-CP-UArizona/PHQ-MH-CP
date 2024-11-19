@@ -372,9 +372,51 @@ combined_plot <- plot_grid(
 # Print the combined plot
 print(combined_plot)  # Display the combined waffle plot
 
+# Dumbbell plot of differences
+dumbbell <- prop_table |> 
+  ggplot(aes(x = fct_rev(subpopulation), y =  n, group = severity)) + 
+  geom_line() +
+  geom_point(size = 2, shape = 21, color = "black", aes(fill = interaction(symptom_labels, severity))) + 
+  facet_wrap(~ symptom_labels) +
+  ## one call to labs reduces the code to relabel the axis
+  labs(x = NULL, y = "Proportion") + 
+  scale_fill_manual(
+    values = color_mapping,    # Ensure that color_mapping aligns with severity levels
+    guide = guide_legend(reverse = TRUE)  # Reverse legend order if desired
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+legend_plot_point <- ggplot(
+  legend_data,
+  aes(x = severity, y = n_count, fill = severity)
+) +
+  geom_point(size = 3, shape = 21, color = "black") +  # Use points to represent each severity level
+  scale_fill_manual(
+    values = bw_colors,   # Use black and white colors for the legend
+    guide = guide_legend(title = "Severity", direction = "horizontal")
+  ) +
+  theme_void()   # Simplify theme for the legend
+
+# Extract the legend using cowplot::get_legend
+legend <- cowplot::get_legend(legend_plot_point)  # Extract legend from the custom legend plot
+
+# Combine waffle plot with legend, adjusting space between them
+combined_plot <- plot_grid(
+  legend,
+  dumbbell, 
+  nrow = 2, 
+  rel_heights = c(0.1, 1),  # Reduce height of the legend to minimize space
+  align = "v",               # Align vertically
+  axis = "tb"                # Align top and bottom axis
+)
+
+print(combined_plot)
+
 # Import required libraries
 # This code relies on libraries such as dplyr, ggplot2, and gt.
-
 # Statistics: 
 ## CMH Test
 # Prepare data for the Cochran-Mantel-Haenszel (CMH) Test
