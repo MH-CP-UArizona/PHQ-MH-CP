@@ -63,17 +63,16 @@ frequency_tables_dplyr <- data %>%
   pivot_longer(cols = everything(), names_to = "Variable", values_to = "Frequency Table")
 
 print(frequency_tables_dplyr)
-
+data$HighImpactCP_largedenom-data$LowerImpactCP_largedenom
 
 # Mutually Exclusive Subpopulations: Create categorical variables for specific subpopulations based on conditions
 data$subpopulation <- with(data, factor(ifelse(
   LowerImpactCP_largedenom == 1 & depression == 1, "Depression and Low Impact CP",
   ifelse(ChronicPain_any == 0 & depression == 1, "Depression No CP",
-         ifelse(HighImpactCP_largedenom == 1 & depression == 1, "Depression and High Impact CP",
-                ifelse(HighFAMImpactCP_largedenom == 1 & depression == 1, "Depression and Family Impact CP", NA)
+         ifelse(HighImpactCP_largedenom == 1 & LowerImpactCP_largedenom == 0 & depression == 1, "Depression and High Impact CP", NA)
          )
   )
-)))
+))
 
 # Filter rows where depression == 1 and subpopulation is not NA
 df <- subset(data, depression == 1 & !is.na(subpopulation))
@@ -86,7 +85,7 @@ fig1 <- df %>%
   ggplot(aes(x = PHQ8_count, y = subpopulation, fill = subpopulation)) +
   geom_boxplot(width = 0.5) +  # Create a box plot
   scale_fill_colorblind() +  # Apply colorblind-friendly colors
-  labs(title = "PHQ Scores by Subpopulation", x = "PHQ Scores", y = "Subpopulation") +  # Set axis labels and title
+  labs(title = "PHQ Scores by Subpopulation", x = "PHQ Scores", y = NULL) +  # Set axis labels and title
   theme_minimal(base_size = 12) +
   theme(legend.position = "none")  # Hide legend
 
@@ -244,21 +243,22 @@ rownames(long_results) <- NULL
 # Add symptom_labels using case_when
 long_results$symptom_labels <- dplyr::case_when(
   long_results$symptom == "anhedonia" ~ "Anhedonia",
-  long_results$symptom == "blues" ~ "Blues",
-  long_results$symptom == "eating_probs" ~ "Eating Problems",
-  long_results$symptom == "energy_probs" ~ "Energy Problems",
-  long_results$symptom == "self_blame_probs" ~ "Self Blame Problems",
-  long_results$symptom == "sleep_probs" ~ "Sleep Problems",
-  long_results$symptom == "concentration_probs" ~ "Concentration Problems",
-  long_results$symptom == "moving_speed" ~ "Moving Problems",
+  long_results$symptom == "blues" ~ "Sadness",
+  long_results$symptom == "eating_probs" ~ "Appetite",
+  long_results$symptom == "energy_probs" ~ "Energy",
+  long_results$symptom == "self_blame_probs" ~ "Guilt",
+  long_results$symptom == "sleep_probs" ~ "Sleep",
+  long_results$symptom == "concentration_probs" ~ "Concentration",
+  long_results$symptom == "moving_speed" ~ "Psychomotor",
   TRUE ~ NA_character_
 )
 
 # Order symptom_labels and severity
 long_results$symptom_labels <- factor(long_results$symptom_labels, levels = c(
-  "Anhedonia", "Blues", "Eating Problems", "Energy Problems",
-  "Self Blame Problems", "Sleep Problems", "Concentration Problems", "Moving Problems"
+  "Anhedonia", "Sadness", "Appetite", "Energy",
+  "Guilt", "Sleep", "Concentration", "Psychomotor"
 ))
+
 long_results$severity <- factor(long_results$severity, levels = c("Always", "Mostly", "Some", "No"))  # Order severity levels
 
 # Add fill_value by combining symptom_labels and severity
@@ -303,9 +303,8 @@ for (i in seq_along(symptom_labels)) {  # Loop through each symptom label
 
 
 # Generate the waffle plot to visualize the data by subpopulation and severity levels
-# Updated waffle plot
+df |> group_by(subpopulation) |> summarise(n = n())
 
-# Generate the waffle plot
 wafflePlot <- ggplot(
   long_results,
   aes(fill = fill_value, values = n_count)
@@ -320,7 +319,14 @@ wafflePlot <- ggplot(
     subpopulation ~ symptom_labels,
     switch = "both",
     labeller = labeller(
-      subpopulation = label_wrap_gen(width = 10),
+      subpopulation = as_labeller(
+        c(
+          "Depression and High Impact CP" = "Depression and High Impact CP\n(n=865)",
+          "Depression and Low Impact CP" = "Depression and Low Impact CP\n(n=471)",
+          "Depression No CP" = "Depression No CP\n(n=853)"
+        ),
+        default = label_wrap_gen(width = 10)
+      ),
       symptom_labels = label_wrap_gen(width = 10)
     )
   ) +
@@ -343,7 +349,7 @@ wafflePlot <- ggplot(
     strip.background.x = element_rect(fill = "white", color = "white"),
     strip.background.y = element_rect(fill = "white", color = "white"),
     strip.text.x = element_text(color = "black", size = 8.4),
-    strip.text.y.left = element_text(color = "black", size = 9, angle = 0, hjust = 1)
+    strip.text.y.left = element_text(color = "black", size = 8.4, angle = 0, hjust = 1)
   )
 
 
