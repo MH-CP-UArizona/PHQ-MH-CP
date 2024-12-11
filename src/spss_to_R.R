@@ -575,3 +575,167 @@ frequencies(data$mh_utiliz_need)
 frequencies(data$MHrelevance)
 frequencies(data$MHscreeningAccurate)
 
+# Recode variable for general health status
+data$healthstatus <- ifelse(data$PHSTAT_A == 1, 5,
+                            ifelse(data$PHSTAT_A == 2, 4,
+                                   ifelse(data$PHSTAT_A == 3, 3,
+                                          ifelse(data$PHSTAT_A == 4, 2,
+                                                 ifelse(data$PHSTAT_A == 5, 1, NA)))))
+
+# Label general health status
+data$healthstatus <- factor(data$healthstatus,
+                            levels = c(1, 2, 3, 4, 5),
+                            labels = c("Poor", "Fair", "Good", "Very Good", "Excellent"))
+
+# Recode functional limitations variables
+data$soc_work_limit <- ifelse(data$SOCWRKLIM_A == 1, 1, ifelse(data$SOCWRKLIM_A == 2, 0, NA))
+data$soc_errands_limit <- ifelse(data$SOCERRNDS_A == 1, 0, ifelse(data$SOCERRNDS_A %in% c(2, 3, 4), 1, NA))
+data$soc_participate_limit <- ifelse(data$SOCSCLPAR_A == 1, 0, ifelse(data$SOCSCLPAR_A %in% c(2, 3, 4), 1, NA))
+
+# Create variable for functional limitations
+data$any_functional_limit <- ifelse(data$soc_work_limit == 1 | data$soc_errands_limit == 1 | data$soc_participate_limit == 1, 1,
+                                    ifelse(data$soc_work_limit == 0 & data$soc_errands_limit == 0 & data$soc_participate_limit == 0, 0, NA))
+
+# Label functional limitations
+data$any_functional_limit <- factor(data$any_functional_limit,
+                                    levels = c(0, 1),
+                                    labels = c("No", "Yes"))
+
+# Create variable for combinations of functional limitations
+data$func_Limitations_combos <- with(data, ifelse(
+  soc_work_limit == 0 & soc_errands_limit == 0 & soc_participate_limit == 0, 0,
+  ifelse(soc_work_limit == 1 & soc_errands_limit == 0 & soc_participate_limit == 0, 1,
+         ifelse(soc_work_limit == 0 & soc_errands_limit == 1 & soc_participate_limit == 0, 2,
+                ifelse(soc_work_limit == 0 & soc_errands_limit == 0 & soc_participate_limit == 1, 3, 2)))))
+
+# Compute binaries for combinations of treatment and functional limitation
+data$txANDlimitation <- ifelse(data$any_mh_tx_12m == 1 & data$any_functional_limit == 1, 1,
+                               ifelse(data$any_mh_tx_12m == 0 | data$any_functional_limit == 0, 0, NA))
+
+data$limitationNOtx <- ifelse(data$any_functional_limit == 1 & data$any_mh_tx_12m == 0, 1,
+                              ifelse(data$any_functional_limit == 0 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$NoLimitationNOtx <- ifelse(data$any_functional_limit == 0 & data$any_mh_tx_12m == 0, 1,
+                                ifelse(data$any_functional_limit == 1 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$txNOlimitation <- ifelse(data$any_mh_tx_12m == 1 & data$any_functional_limit == 0, 1,
+                              ifelse(data$any_mh_tx_12m == 0 | data$any_functional_limit == 1, 0, NA))
+
+# Create mh_utiliz_function variable
+data$mh_utiliz_function <- ifelse(data$NoLimitationNOtx == 1, 1,
+                                  ifelse(data$txNOlimitation == 1, 2,
+                                         ifelse(data$txANDlimitation == 1, 3,
+                                                ifelse(data$limitationNOtx == 1, 4, NA))))
+
+# Label mh_utiliz_function variable
+data$mh_utiliz_function <- factor(data$mh_utiliz_function,
+                                  levels = c(1, 2, 3, 4),
+                                  labels = c(
+                                    "No functional limitation and no MH treatment",
+                                    "MH treatment and no functional limitation",
+                                    "MH Treatment and functional limitation",
+                                    "Functional limitation and not using MH Treatments"
+                                  ))
+
+# Recode pain efficacy variable
+data$effective <- ifelse(data$PAINMEFF_A == 1, 1, ifelse(data$PAINMEFF_A == 2, 0, NA))
+
+# Functional impact of pain binaries
+data$CPNeverLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 1, 1,
+                             ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% 2:4, 0, NA))
+
+data$CPSometimesLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 2, 1,
+                                 ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 3, 4), 0, NA))
+
+data$CPMostDaysLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 3, 1,
+                                ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2, 4), 0, NA))
+
+data$CPEveryDayLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 4, 1,
+                                ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2, 3), 0, NA))
+
+# Functional limitation affecting families
+data$FAMNeverHighImpact <- ifelse(data$PAIAFFM3M_A == 1, 1,
+                                  ifelse(data$PAIAFFM3M_A %in% c(2, 3, 4), 0, NA))
+
+data$FAMSometimesHiImpact <- ifelse(data$PAIAFFM3M_A == 2, 1,
+                                    ifelse(data$PAIAFFM3M_A %in% c(1, 3, 4), 0, NA))
+
+data$FAMMostDaysHighImpact <- ifelse(data$PAIAFFM3M_A == 3, 1,
+                                     ifelse(data$PAIAFFM3M_A %in% c(1, 2, 4), 0, NA))
+
+data$FAMEveryDayHighImpact <- ifelse(data$PAIAFFM3M_A == 4, 1,
+                                     ifelse(data$PAIAFFM3M_A %in% c(1, 2, 3), 0, NA))
+
+data$HighImpactFAM <- ifelse(data$PAIAFFM3M_A %in% c(3, 4), 1,
+                             ifelse(data$PAIAFFM3M_A %in% c(1, 2), 0, NA))
+
+# Recode NOTCOV_A to Uninsured
+data$Uninsured <- ifelse(data$NOTCOV_A == 1, 1, ifelse(data$NOTCOV_A == 2, 0, NA))
+
+# Recode INCWELF_A to PublicAssistance
+data$PublicAssistance <- ifelse(data$INCWELF_A == 1, 1, ifelse(data$INCWELF_A == 2, 0, NA))
+
+# Recode URBRRL to Rural and Urban
+data$Rural <- ifelse(data$URBRRL == 4, 1, 0)
+data$Urban <- ifelse(data$URBRRL == 1, 1, 0)
+
+# Recode SEX_A to Female and Male
+data$Female <- ifelse(data$SEX_A == 2, 1, ifelse(data$SEX_A == 1, 0, NA))
+data$Male <- ifelse(data$SEX_A == 1, 1, ifelse(data$SEX_A == 2, 0, NA))
+
+# Create GenderPain variable
+data$GenderPain <- ifelse(data$Male == 1 & data$ChronicPain_any == 1, 1,
+                          ifelse(data$Male == 0 & data$ChronicPain_any == 1, 2,
+                                 ifelse(data$Male == 1 & data$ChronicPain_any == 0, 3,
+                                        ifelse(data$Male == 0 & data$ChronicPain_any == 0, 4, NA))))
+
+# Recode CANEV_A to cancer
+data$cancer <- ifelse(data$CANEV_A == 1, 1, ifelse(data$CANEV_A == 2, 0, NA))
+
+# Recode HISPALLP_A to race/ethnicity variables
+data$Hispanic <- ifelse(data$HISPALLP_A == 1, 1, 0)
+data$NHW <- ifelse(data$HISPALLP_A == 2, 1, 0)
+data$BlackAfAmer <- ifelse(data$HISPALLP_A == 3, 1, 0)
+data$Asian <- ifelse(data$HISPALLP_A == 4, 1, 0)
+data$AIANonly <- ifelse(data$HISPALLP_A == 5, 1, 0)
+data$AIAN_multiracialonly <- ifelse(data$HISPALLP_A == 6, 1, 0)
+data$AIAN_all <- ifelse(data$HISPALLP_A %in% c(5, 6), 1, 0)
+data$Other <- ifelse(data$HISPALLP_A == 7, 1, 0)
+
+# Recode MARITAL_A to CurrentlyHasPartner and NOcurrentPartner
+data$CurrentlyHasPartner <- ifelse(data$MARITAL_A %in% c(1, 2), 1, ifelse(data$MARITAL_A == 3, 0, NA))
+data$NOcurrentPartner <- ifelse(data$MARITAL_A == 3, 1, ifelse(data$MARITAL_A %in% c(1, 2), 0, NA))
+
+# Recode MEDDL12M_A to DelayedMedicalCareDueToCost
+data$DelayedMedicalCareDueToCost <- ifelse(data$MEDDL12M_A == 1, 1, ifelse(data$MEDDL12M_A == 2, 0, NA))
+
+# Recode WRKHLTHFC_A to WorkInHealthCare
+data$WorkInHealthCare <- ifelse(data$WRKHLTHFC_A == 1, 1, ifelse(data$WRKHLTHFC_A == 2, 0, NA))
+
+# Recode PCNTLT18TC to ChildAtHome
+data$ChildAtHome <- ifelse(data$PCNTLT18TC > 0, 1, 0)
+
+# Create categorical and binary Age variables (CHECK WITH JENN)
+data$AgeCat <- cut(data$AGEP_A,
+                   breaks = c(-Inf, 24, 34, 44, 54, 64, 74, 84, Inf),
+                   labels = c("1", "2", "3", "4", "5", "6", "7", "8"),
+                   right = TRUE, include.lowest = TRUE)
+data$age18_24 <- ifelse(data$AgeCat == "1", 1, 0)
+data$age25_34 <- ifelse(data$AgeCat == "2", 1, 0)
+data$age35_44 <- ifelse(data$AgeCat == "3", 1, 0)
+data$age45_54 <- ifelse(data$AgeCat == "4", 1, 0)
+data$age55_64 <- ifelse(data$AgeCat == "5", 1, 0)
+data$age65_74 <- ifelse(data$AgeCat == "6", 1, 0)
+data$age75_84 <- ifelse(data$AgeCat == "7", 1, 0)
+data$age85plus <- ifelse(data$AgeCat == "8", 1, 0)
+
+# Create categorical and binary Education variables
+data$EducCat <- cut(data$EDUC_A,
+                    breaks = c(-Inf, 2, 4, 7, 8, 11),
+                    labels = c("1", "2", "3", "4", "5"),
+                    right = TRUE, include.lowest = TRUE)
+data$NoHighSchool <- ifelse(data$EducCat == "1", 1, 0)
+data$HighSchoolGrad <- ifelse(data$EducCat == "2", 1, 0)
+data$SomeCollege <- ifelse(data$EducCat == "3", 1, 0)
+data$Bachelors <- ifelse(data$EducCat == "4", 1, 0)
+data$GradSchool <- ifelse(data$EducCat == "5", 1, 0)
