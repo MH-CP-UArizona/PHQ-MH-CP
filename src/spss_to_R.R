@@ -12,107 +12,566 @@ library(here)
 # Read in raw data
 data <- read_csv(here("analysis", "data", "rawData", "NHIS_Adult2019_20241127.csv"))
 
-# Define a function to recode variables
-recode <- function(x, old, new, na.rm = FALSE) {
-  if (na.rm) {
-    x[is.na(x)] <- NA
-  }
-  recoded <- x
-  for (i in seq_along(old)) {
-    recoded[x == old[i]] <- new[i]
-  }
-  recoded
-}
+# Recode variables for mental health symptoms
+# Binary variables for mental health symptoms
+data$anxiety <- ifelse(data$GADCAT_A %in% c(3, 4), 1, ifelse(data$GADCAT_A %in% c(1, 2), 0, NA))
+data$depression <- ifelse(data$PHQCAT_A %in% c(3, 4), 1, ifelse(data$PHQCAT_A %in% c(1, 2), 0, NA))
 
-# Define a function to recode variables
-recode <- function(x, old, new, na.rm = FALSE) {
-  if (na.rm) {
-    x[is.na(x)] <- NA
-  }
-  recoded <- x
-  for (i in seq_along(old)) {
-    recoded[x == old[i]] <- new[i]
-  }
-  recoded
-}
-
-# Define a function to calculate frequencies
-frequencies <- function(var) {
-  table(var, useNA = "ifany")
-}
-
-# Label variables using attributes
-label_variable <- function(var, label) {
-  attr(var, "label") <- label
-}
-
-# Recoding anxiety and depression variables
-data$anxiety <- recode(data$GADCAT_A, old = c(3, 4, 1, 2), new = c(1, 1, 0, 0), na.rm = TRUE)
-data$depression <- recode(data$PHQCAT_A, old = c(3, 4, 1, 2), new = c(1, 1, 0, 0), na.rm = TRUE)
-
-# This is a translation of the provided SPSS syntax into R using base R functions.
-
-# Define a function to recode variables
-recode <- function(x, old, new, na.rm = FALSE) {
-  if (na.rm) {
-    x[is.na(x)] <- NA
-  }
-  recoded <- x
-  for (i in seq_along(old)) {
-    recoded[x == old[i]] <- new[i]
-  }
-  recoded
-}
-
-# Define a function to calculate frequencies
-frequencies <- function(var) {
-  table(var, useNA = "ifany")
-}
-
-# Label variables using attributes
-label_variable <- function(var, label) {
-  attr(var, "label") <- label
-}
-
-# Recoding anxiety and depression variables
-data$anxiety <- recode(data$GADCAT_A, old = c(3, 4, 1, 2), new = c(1, 1, 0, 0), na.rm = TRUE)
-data$depression <- recode(data$PHQCAT_A, old = c(3, 4, 1, 2), new = c(1, 1, 0, 0), na.rm = TRUE)
-
-# Recoding PHQ symptoms
+# Binary variables for PHQ symptoms
 symptom_vars <- c("PHQ81_A", "PHQ82_A", "PHQ83_A", "PHQ84_A", "PHQ85_A", "PHQ86_A", "PHQ87_A", "PHQ88_A")
-new_vars <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
+symptom_names <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
 
 for (i in seq_along(symptom_vars)) {
-  data[[new_vars[i]]] <- recode(data[[symptom_vars[i]]], old = c(0, 1, 2, 3), new = c(0, 1, 2, 3), na.rm = TRUE)
+  data[[symptom_names[i]]] <- ifelse(is.na(data[[symptom_vars[i]]]), NA, data[[symptom_vars[i]]])
 }
 
-# Creating a count variable for PHQ8 symptoms
-phq8_cols <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
-data$PHQ8_count <- rowSums(data[phq8_cols], na.rm = TRUE)
+# Binary variables for GAD symptoms
+gad_vars <- c("GAD71_A", "GAD72_A", "GAD73_A", "GAD74_A", "GAD75_A", "GAD76_A", "GAD77_A")
+gad_names <- c("nervous_on_edge", "cant_stop_worry", "worry_differentThings", "relax_probs", 
+               "cant_sit_still", "too_irritable", "fear_future_dread")
 
-# Recoding chronic pain variables
-data$ChronicPain_any <- recode(data$PAIFRQ3M_A, old = c(1, 2, 3, 4), new = c(0, 0, 1, 1), na.rm = TRUE)
-label_variable(data$ChronicPain_any, "Experiences Pain Most Days or Every Day")
+for (i in seq_along(gad_vars)) {
+  data[[gad_names[i]]] <- ifelse(is.na(data[[gad_vars[i]]]), NA, data[[gad_vars[i]]])
+}
 
-data$pain_any <- recode(data$PAIFRQ3M_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
-label_variable(data$pain_any, "Experiences any pain")
+# Compute PHQ8_count
+data$PHQ8_count <- rowSums(data[symptom_names], na.rm = TRUE)
 
-# Recoding and labeling functional limitations
-data$soc_work_limit <- recode(data$SOCWRKLIM_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
-data$soc_errands_limit <- recode(data$SOCERRNDS_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
-data$soc_participate_limit <- recode(data$SOCSCLPAR_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
+# Create frequency tables for variables
+# You can use the table() function for frequencies
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
 
-data$any_functional_limit <- with(data, ifelse(soc_work_limit == 1 | soc_errands_limit == 1 | soc_participate_limit == 1, 1, 0))
-label_variable(data$any_functional_limit, "Is functional Limitation Present")
+# Example: frequencies for depression and anxiety
+frequencies(data$depression)
+frequencies(data$anxiety)
 
-# Recoding general health status
-data$healthstatus <- recode(data$PHSTAT_A, old = c(1, 2, 3, 4, 5), new = c(5, 4, 3, 2, 1), na.rm = TRUE)
-label_variable(data$healthstatus, "General Health Status")
+# Recode severity categories for symptoms
+recode_severity <- function(var, levels) {
+  ifelse(is.na(var), NA, 
+         ifelse(var == levels[1], 1, 
+                ifelse(var == levels[2], 0, 
+                       ifelse(var == levels[3], 0, 
+                              ifelse(var == levels[4], 0, NA)))))
+}
 
-# Recoding treatment-related variables
-data$anxiety_med_NOW <- recode(data$ANXMED_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
-data$depress_med_NOW <- recode(data$DEPMED_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
-data$any_mh_med_12m <- with(data, ifelse(anxiety_med_NOW == 1 | depress_med_NOW == 1, 1, 0))
+severity_categories <- list(
+  NO = c(0, 1, 2, 3),
+  SOME = c(1, 2, 3, 4),
+  MOSTLY = c(2, 1, 3, 4),
+  ALWAYS = c(3, 2, 1, 4),
+  ModSev = c(2, 3, 4, 1)
+)
 
-data$any_mh_therapy_12m <- recode(data$MHTHRPY_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
-label_variable(data$any_mh_therapy_12m, "Any MH therapy in past 12 months")
+for (cat in names(severity_categories)) {
+  for (var in symptom_names) {
+    data[[paste0(cat, var)]] <- recode_severity(data[[var]], severity_categories[[cat]])
+  }
+}
+
+# Create mental health symptoms variable
+data$mh_symptoms <- ifelse(data$depression == 1 | data$anxiety == 1, 1, 
+                      ifelse(data$depression == 0 & data$anxiety == 0, 0, NA))
+
+# Create mental health categorical variable
+data$mh_categorical <- ifelse(data$depression == 1 & data$anxiety == 0, 1, 
+                         ifelse(data$depression == 0 & data$anxiety == 1, 2, 
+                                ifelse(data$depression == 1 & data$anxiety == 1, 3, 
+                                       ifelse(data$depression == 0 & data$anxiety == 0, 4, NA))))
+
+# Label values
+mh_categorical_labels <- c("Depression Only", "Anxiety Only", "Both depression and anxiety", "Neither depression nor anxiety")
+
+# Frequency tables for mental health variables
+frequencies(data$mh_symptoms)
+frequencies(data$mh_categorical)
+
+# Recode variables for chronic pain symptoms
+data$ChronicPain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA, 
+                               ifelse(data$PAIFRQ3M_A %in% c(3, 4), 1, 0))
+data$pain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA, 
+                        ifelse(data$PAIFRQ3M_A %in% c(2, 3, 4), 1, 0))
+data$NO_ChronicPain_any <- ifelse(is.na(data$ChronicPain_any), NA, 
+                                  ifelse(data$ChronicPain_any == 0, 1, 0))
+
+# Recode pain location/type variables
+pain_vars <- c("PAIBACK3M_A", "PAIULMB3M_A", "PAILLMB3M_A", "PAIHDFC3M_A", "PAIAPG3M_A", "PAITOOTH3M_A")
+pain_names <- c("ModSevBackPain", "ModSevHandPain", "ModSevHipPain", "ModSevMigraine", "ModSevAbdominalPain", "ModSevToothPain")
+
+for (i in seq_along(pain_vars)) {
+  data[[pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA, 
+                                  ifelse(data[[pain_vars[i]]] %in% c(3, 4), 1, 0))
+}
+
+any_pain_names <- c("anyBackPain", "anyHandPain", "anyHipPain", "anyMigraine", "anyAbdominalPain", "anyToothPain")
+
+for (i in seq_along(pain_vars)) {
+  data[[any_pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA, 
+                                      ifelse(data[[pain_vars[i]]] %in% c(2, 3, 4), 1, 0))
+}
+
+# Recode pain severity
+data$pain_severity <- ifelse(is.na(data$PAIAMNT_A), NA, 
+                             ifelse(data$PAIAMNT_A == 1, 1, 
+                                    ifelse(data$PAIAMNT_A == 2, 3, 
+                                           ifelse(data$PAIAMNT_A == 3, 2, NA))))
+
+# Create severity labels
+severity_labels <- c("A little", "Somewhere between a little and a lot", "A lot")
+data$pain_severity_label <- factor(data$pain_severity, levels = 1:3, labels = severity_labels)
+
+# Recode into severity binary variables
+data$aLittlePain <- ifelse(is.na(data$pain_severity), NA, 
+                           ifelse(data$pain_severity == 1, 1, 0))
+data$betweenLittleandLot <- ifelse(is.na(data$pain_severity), NA, 
+                                   ifelse(data$pain_severity == 2, 1, 0))
+data$aLotPain <- ifelse(is.na(data$pain_severity), NA, 
+                        ifelse(data$pain_severity == 3, 1, 0))
+
+# Combination of pain and mental health symptoms
+data$cooccurence <- NA
+data$cooccurence <- ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 0, 1, 
+                           ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 0, 2, 
+                                  ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 1, 3, 
+                                         ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 1, 4, NA))))
+
+# Functional limitation variables
+data$HighImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
+                            ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1, 
+                                   ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 0, NA)))
+
+data$LowerImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
+                             ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1, 
+                                    ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 0, NA)))
+
+# Functional limitation variables with larger denominator
+data$HighImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
+                                       ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1, 0))
+
+data$LowerImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
+                                        ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1, 0))
+
+# Subset for depression == 1
+depression_subset <- subset(data, depression == 1)
+
+# Frequencies for subset
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+frequencies(depression_subset$ChronicPain_any)
+frequencies(depression_subset$LowerImpactCP_largedenom)
+frequencies(depression_subset$HighImpactCP_largedenom)
+
+# Compute High Family Impact for Chronic Pain
+data$HighFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
+                               ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
+                                      ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 0, NA)))
+
+# Compute Lower Family Impact for Chronic Pain
+data$LowerFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
+                                ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1, 
+                                       ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 0, NA)))
+
+# High Family Impact with larger denominator
+data$HighFAMImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
+                                          ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 0))
+
+# High Family Impact with nested condition
+data$HighFAMImpactCP_largedenomNESTED <- ifelse(is.na(data$ChronicPain_any) | is.na(data$HighImpactCP_largedenom) | is.na(data$PAIAFFM3M_A), NA, 
+                                                ifelse(data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
+                                                       ifelse((data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, 
+                                                              ifelse(data$ChronicPain_any == 0, 0, NA))))
+
+# Lower Family Impact with larger denominator
+data$LowerFAMImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
+                                           ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1, 
+                                                  ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 0, 0)))
+
+# Lower Family Impact with nested condition
+data$LowerFAMImpactCP_largedenomNESTED <- ifelse(is.na(data$ChronicPain_any) | is.na(data$HighImpactCP_largedenom) | is.na(data$PAIAFFM3M_A), NA, 
+                                                 ifelse(data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
+                                                        ifelse((data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, 
+                                                               ifelse(data$ChronicPain_any == 0, 0, NA))))
+
+# Compute Chronic Pain Ordinal variable
+data$ChronicPainOrdinal <- ifelse(is.na(data$ChronicPain_any) | is.na(data$LowerImpactCP_largedenom) | is.na(data$HighImpactCP_largedenom), NA, 
+                                  ifelse(data$ChronicPain_any == 0, 1, 
+                                         ifelse(data$ChronicPain_any == 1 & data$LowerImpactCP_largedenom == 1, 2, 
+                                                ifelse(data$ChronicPain_any == 1 & data$HighImpactCP_largedenom == 1, 3, NA))))
+
+# Compute any Chronic Migraine
+data$anyChronicMigraine <- ifelse(is.na(data$anyMigraine) | is.na(data$ChronicPain_any), NA, 
+                                  ifelse(data$anyMigraine == 1 & data$ChronicPain_any == 1, 1, 0))
+
+# Compute High Impact Chronic Migraine
+data$high_impact_ChronicMigraine <- ifelse(is.na(data$anyChronicMigraine) | is.na(data$HighImpactCP_largedenom), NA, 
+                                           ifelse(data$anyChronicMigraine == 1 & data$HighImpactCP_largedenom == 1, 1, 0))
+
+# Compute High Family Impact Chronic Migraine
+data$high_FAMimpact_ChronicMigraine <- ifelse(is.na(data$high_impact_ChronicMigraine) | is.na(data$HighFAMImpactCP_largedenom), NA, 
+                                              ifelse(data$high_impact_ChronicMigraine == 1 & data$HighFAMImpactCP_largedenom == 1, 1, 0))
+
+# Compute cooccurrence variable
+data$cooccurence <- ifelse(is.na(data$ChronicPain_any) | is.na(data$mh_symptoms), NA, 
+                           ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 0, 1, 
+                                  ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 0, 2, 
+                                         ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 1, 3, 
+                                                ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 1, 4, NA)))))
+
+# Label cooccurence values
+cooccurence_labels <- c("No chronic pain or MH symptoms", "Chronic Pain (Only)", "Mental Health (Only)", "Co-Occuring Symptoms")
+data$cooccurence <- factor(data$cooccurence, levels = 1:4, labels = cooccurence_labels)
+
+# Frequency table for cooccurence
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+frequencies(data$cooccurence)
+
+# Subset and frequency analysis for cooccurence not equal to 1
+subset_cooccurence <- subset(data, cooccurence != "No chronic pain or MH symptoms")
+frequencies(subset_cooccurence$cooccurence)
+
+# Compute chronic migraine cooccurrence variable
+data$chronic_migraine_cooccurence <- ifelse(is.na(data$anyChronicMigraine) | is.na(data$mh_symptoms), NA, 
+                                            ifelse(data$anyChronicMigraine == 0 & data$mh_symptoms == 0, 1, 
+                                                   ifelse(data$anyChronicMigraine == 1 & data$mh_symptoms == 0, 2, 
+                                                          ifelse(data$anyChronicMigraine == 0 & data$mh_symptoms == 1, 3, 
+                                                                 ifelse(data$anyChronicMigraine == 1 & data$mh_symptoms == 1, 4, NA)))))
+
+# Label chronic migraine cooccurrence values
+chronic_migraine_cooccurence_labels <- c("No chronic migraine or MH symptoms", "Chronic migraine (Only)", "Mental Health (Only)", "Co-Occuring Symptoms")
+data$chronic_migraine_cooccurence <- factor(data$chronic_migraine_cooccurence, levels = 1:4, labels = chronic_migraine_cooccurence_labels)
+
+# Frequency table for chronic migraine cooccurrence
+frequencies(data$chronic_migraine_cooccurence)
+
+# Subset and frequency analysis for chronic migraine cooccurrence not equal to 1
+subset_chronic_migraine_cooccurence <- subset(data, chronic_migraine_cooccurence != "No chronic migraine or MH symptoms")
+frequencies(subset_chronic_migraine_cooccurence$chronic_migraine_cooccurence)
+
+# Recode variables for treatment-related measures
+data$anxiety_med_NOW <- ifelse(data$ANXMED_A == 1, 1, ifelse(data$ANXMED_A == 2, 0, NA))
+data$depress_med_NOW <- ifelse(data$DEPMED_A == 1, 1, ifelse(data$DEPMED_A == 2, 0, NA))
+data$other_mh_med_12m <- ifelse(data$MHRX_A == 1, 1, ifelse(data$MHRX_A == 2, 0, NA))
+
+# Compute any mental health medication in past 12 months
+data$any_mh_med_12m <- ifelse(is.na(data$anxiety_med_NOW) & is.na(data$depress_med_NOW) & is.na(data$other_mh_med_12m), NA,
+                              ifelse(data$anxiety_med_NOW == 1 | data$depress_med_NOW == 1 | data$other_mh_med_12m == 1, 1, 0))
+
+# Compute any anxiety or depression medication in past 12 months
+data$any_ad_med_12m <- ifelse(is.na(data$anxiety_med_NOW) & is.na(data$depress_med_NOW), NA,
+                              ifelse(data$anxiety_med_NOW == 1 | data$depress_med_NOW == 1, 1, 0))
+
+# Recode mental health therapy in past 12 months
+data$any_mh_therapy_12m <- ifelse(data$MHTHRPY_A == 1, 1, ifelse(data$MHTHRPY_A == 2, 0, NA))
+
+# Recode current mental health therapy
+data$MH_therapy_NOW <- ifelse(data$MHTPYNOW_A == 1, 1, ifelse(data$MHTPYNOW_A == 2, 0, NA))
+data$MH_therapy_NOW <- ifelse(data$any_mh_therapy_12m == 0, 0, data$MH_therapy_NOW)
+
+# Compute any mental health treatment in past 12 months
+data$any_mh_tx_12m <- ifelse(is.na(data$any_mh_med_12m) & is.na(data$any_mh_therapy_12m), NA,
+                             ifelse(data$any_mh_med_12m == 1 | data$any_mh_therapy_12m == 1, 1, 0))
+
+# Compute current mental health treatment
+data$any_mh_tx_NOW <- ifelse(is.na(data$anxiety_med_NOW) & is.na(data$depress_med_NOW) & is.na(data$MH_therapy_NOW), NA,
+                             ifelse(data$anxiety_med_NOW == 1 | data$depress_med_NOW == 1 | data$MH_therapy_NOW == 1, 1, 0))
+
+# Compute mental health treatment approach in past 12 months
+data$mh_tx_approach_12m <- ifelse(is.na(data$any_mh_med_12m) & is.na(data$any_mh_therapy_12m), NA,
+                                  ifelse(data$any_mh_med_12m == 1 & data$any_mh_therapy_12m == 0, 1,
+                                         ifelse(data$any_mh_med_12m == 0 & data$any_mh_therapy_12m == 1, 2,
+                                                ifelse(data$any_mh_med_12m == 1 & data$any_mh_therapy_12m == 1, 3,
+                                                       ifelse(data$any_mh_med_12m == 0 & data$any_mh_therapy_12m == 0, 4, NA)))))
+
+# Label treatment approach
+mh_tx_approach_labels <- c("Medication only", "Therapy only", "Both medication and therapy", "No A/D treatment")
+data$mh_tx_approach_12m <- factor(data$mh_tx_approach_12m, levels = 1:4, labels = mh_tx_approach_labels)
+
+# Frequency tables for treatment-related variables
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+
+# Example frequencies
+frequencies(data$any_mh_med_12m)
+frequencies(data$any_mh_therapy_12m)
+frequencies(data$mh_tx_approach_12m)
+
+# Recode pain management strategies into binary variables
+data$pt <- ifelse(data$PAIPHYSTPY_A == 1, 1, ifelse(data$PAIPHYSTPY_A == 2, 0, NA))
+data$chiro <- ifelse(data$PAICHIRO_A == 1, 1, ifelse(data$PAICHIRO_A == 2, 0, NA))
+data$cbt_pain <- ifelse(data$PAITALKTPY_A == 1, 1, ifelse(data$PAITALKTPY_A == 2, 0, NA))
+data$self_mgmt <- ifelse(data$PAIPROGRAM_A == 1, 1, ifelse(data$PAIPROGRAM_A == 2, 0, NA))
+data$peer_sppt <- ifelse(data$PAIGROUP_A == 1, 1, ifelse(data$PAIGROUP_A == 2, 0, NA))
+data$yoga <- ifelse(data$PAIYOGA_A == 1, 1, ifelse(data$PAIYOGA_A == 2, 0, NA))
+data$massage <- ifelse(data$PAIMASSAGE_A == 1, 1, ifelse(data$PAIMASSAGE_A == 2, 0, NA))
+data$meditation <- ifelse(data$PAIMEDITAT_A == 1, 1, ifelse(data$PAIMEDITAT_A == 2, 0, NA))
+data$other_pain_tx <- ifelse(data$PAIMOTHER_A == 1, 1, ifelse(data$PAIMOTHER_A == 2, 0, NA))
+
+# Recode opioid use variables
+data$Any_Rx12m <- ifelse(data$RX12M_A == 1, 1, ifelse(data$RX12M_A == 2, 0, NA))
+data$AnyOpioid12m <- ifelse(data$OPD12M_A == 1, 1, ifelse(data$OPD12M_A == 2, 0, NA))
+data$AnyOpioid3m <- ifelse(data$OPD3M_A == 1, 1, ifelse(data$OPD3M_A == 2, 0, NA))
+data$AcuteOpioid3m <- ifelse(data$OPDACUTE_A == 1, 1, ifelse(data$OPDACUTE_A == 2, 0, NA))
+data$ChronicOpioid3m <- ifelse(data$OPDCHRONIC_A == 1, 1, ifelse(data$OPDCHRONIC_A == 2, 0, NA))
+data$ChronicOpdFreq3m <- ifelse(data$OPDFREQ_A == 1, 1, ifelse(data$OPDFREQ_A == 2, 2, ifelse(data$OPDFREQ_A == 3, 3, NA)))
+
+# Compute new opioid variables
+data$AnyOpioid12m_NEW <- ifelse(data$Any_Rx12m == 7, 7,
+                                ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 0, 0,
+                                       ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1, 1, NA)))
+
+data$AnyOpioid3m_NEW <- ifelse(data$Any_Rx12m == 0, 0,
+                               ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 0, 0,
+                                      ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 0, 0,
+                                             ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 1, 1, NA))))
+
+data$AcuteOpioid3m_NEW <- ifelse(data$Any_Rx12m == 0, 0,
+                                 ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 0, 0,
+                                        ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 0, 0,
+                                               ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 1 & data$AcuteOpioid3m == 1, 1, 0))))
+
+data$ChronicOpioid3m_NEW <- ifelse(data$Any_Rx12m == 0, 0,
+                                   ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 0, 0,
+                                          ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 0, 0,
+                                                 ifelse(data$Any_Rx12m == 1 & data$AnyOpioid12m == 1 & data$AnyOpioid3m == 1 & data$ChronicOpioid3m == 1, 1, 0))))
+
+# Compute any pain treatment variable
+data$any_pain_treatment <- ifelse(
+  data$ChronicOpioid3m_NEW == 1 | data$pt == 1 | data$chiro == 1 | data$cbt_pain == 1 |
+    data$self_mgmt == 1 | data$peer_sppt == 1 | data$yoga == 1 | data$massage == 1 |
+    data$meditation == 1 | data$other_pain_tx == 1, 1,
+  ifelse(
+    data$ChronicOpioid3m_NEW == 0 & data$pt == 0 & data$chiro == 0 & data$cbt_pain == 0 &
+      data$self_mgmt == 0 & data$peer_sppt == 0 & data$yoga == 0 & data$massage == 0 &
+      data$meditation == 0 & data$other_pain_tx == 0, 0, NA
+  )
+)
+
+# Compute no pain treatment variable
+data$NO_pain_treatment <- ifelse(data$any_pain_treatment == 1, 0, ifelse(data$any_pain_treatment == 0, 1, NA))
+
+# Compute integrated treatment approach variable
+data$Integrated_tx_approach <- ifelse(
+  data$any_pain_treatment == 0 & data$any_mh_tx_NOW == 0, 1,
+  ifelse(data$any_pain_treatment == 1 & data$any_mh_tx_NOW == 0, 2,
+         ifelse(data$any_pain_treatment == 0 & data$any_mh_tx_NOW == 1, 3,
+                ifelse(data$any_pain_treatment == 1 & data$any_mh_tx_NOW == 1, 4, NA))))
+
+# Label integrated treatment approach
+data$Integrated_tx_approach <- factor(
+  data$Integrated_tx_approach,
+  levels = 1:4,
+  labels = c(
+    "No pain treatment and no MH treatment",
+    "Pain treatment only",
+    "MH treatment only",
+    "Both Pain and MH treatment"
+  )
+)
+
+# Frequency tables for pain treatment variables
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+
+frequencies(data$any_pain_treatment)
+frequencies(data$Integrated_tx_approach)
+
+# Create binaries for combinations of treatment and need
+data$txANDsymptoms <- ifelse(data$any_mh_tx_12m == 1 & data$mh_symptoms == 1, 1,
+                             ifelse(data$any_mh_tx_12m == 0 | data$mh_symptoms == 0, 0, NA))
+
+data$symptomsNOtx <- ifelse(data$mh_symptoms == 1 & data$any_mh_tx_12m == 0, 1,
+                            ifelse(data$mh_symptoms == 0 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$NoSymptomsNOtx <- ifelse(data$mh_symptoms == 0 & data$any_mh_tx_12m == 0, 1,
+                              ifelse(data$mh_symptoms == 1 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$txNOsymptoms <- ifelse(data$any_mh_tx_12m == 1 & data$mh_symptoms == 0, 1,
+                            ifelse(data$any_mh_tx_12m == 0 | data$mh_symptoms == 1, 0, NA))
+
+# Create mh_utiliz_need variable
+data$mh_utiliz_need <- ifelse(data$NoSymptomsNOtx == 1, 1,
+                              ifelse(data$txNOsymptoms == 1, 2,
+                                     ifelse(data$txANDsymptoms == 1, 3,
+                                            ifelse(data$symptomsNOtx == 1, 4, NA))))
+
+# Label mh_utiliz_need variable
+data$mh_utiliz_need <- factor(data$mh_utiliz_need,
+                              levels = 1:4,
+                              labels = c(
+                                "No MH symptoms and no MH treatment",
+                                "MH symptoms controlled with MH treatment",
+                                "MH symptoms poorly controlled despite MH Treatment",
+                                "MH symptoms and not using MH Treatments"
+                              ))
+
+# Create MHrelevance variable
+data$MHrelevance <- ifelse(data$NoSymptomsNOtx == 0, 1,
+                           ifelse(data$NoSymptomsNOtx == 1, 0, NA))
+
+
+# Create screening and referral-related variables
+data$DocSaidDepress <- ifelse(data$DEPEV_A == 1, 1, ifelse(data$DEPEV_A == 2, 0, NA))
+data$DocSaidAnxiety <- ifelse(data$ANXEV_A == 1, 1, ifelse(data$ANXEV_A == 2, 0, NA))
+data$DocSaidAnyMH <- ifelse(data$DocSaidAnxiety == 1 | data$DocSaidDepress == 1, 1,
+                            ifelse(data$DocSaidAnxiety == 0 & data$DocSaidDepress == 0, 0, NA))
+data$DocNEVERsaidMH <- ifelse(data$DocSaidAnyMH == 0, 1, ifelse(data$DocSaidAnyMH == 1, 0, NA))
+data$NOusualplace <- ifelse(data$USUALPL_A == 1, 0, ifelse(data$USUALPL_A == 2, 1, NA))
+data$NOpaidSickLeave <- ifelse(data$EMPPDSKLV_A == 1, 0, ifelse(data$EMPPDSKLV_A == 2, 1, NA))
+data$NOworkedLastWeek <- ifelse(data$EMPWRKLSWK_A == 1, 0, ifelse(data$EMPWRKLSWK_A == 2, 1, NA))
+
+# Recode variable for general health status
+data$healthstatus <- ifelse(data$PHSTAT_A == 1, 5,
+                            ifelse(data$PHSTAT_A == 2, 4,
+                                   ifelse(data$PHSTAT_A == 3, 3,
+                                          ifelse(data$PHSTAT_A == 4, 2,
+                                                 ifelse(data$PHSTAT_A == 5, 1, NA)))))
+
+# Label healthstatus variable
+data$healthstatus <- factor(data$healthstatus,
+                            levels = 1:5,
+                            labels = c("Poor", "Fair", "Good", "Very Good", "Excellent"))
+
+# Recode functional limitations variables
+data$soc_work_limit <- ifelse(data$SOCWRKLIM_A == 1, 1, ifelse(data$SOCWRKLIM_A == 2, 0, NA))
+data$soc_errands_limit <- ifelse(data$SOCERRNDS_A == 1, 0, ifelse(data$SOCERRNDS_A %in% c(2, 3, 4), 1, NA))
+data$soc_participate_limit <- ifelse(data$SOCSCLPAR_A == 1, 0, ifelse(data$SOCSCLPAR_A %in% c(2, 3, 4), 1, NA))
+
+# Create any functional limitation variable
+data$any_functional_limit <- ifelse(
+  data$soc_work_limit == 1 | data$soc_errands_limit == 1 | data$soc_participate_limit == 1, 1,
+  ifelse(data$soc_work_limit == 0 & data$soc_errands_limit == 0 & data$soc_participate_limit == 0, 0, NA))
+
+# Label any_functional_limit variable
+data$any_functional_limit <- factor(data$any_functional_limit,
+                                    levels = c(0, 1),
+                                    labels = c("No", "Yes"))
+
+# Create functional limitations combinations variable
+data$func_Limitations_combos <- ifelse(
+  data$soc_work_limit == 0 & data$soc_errands_limit == 0 & data$soc_participate_limit == 0, 0,
+  ifelse(data$soc_work_limit == 1 & data$soc_errands_limit == 0 & data$soc_participate_limit == 0, 1,
+         ifelse(data$soc_work_limit == 0 & data$soc_errands_limit == 1 & data$soc_participate_limit == 0, 2,
+                ifelse(data$soc_work_limit == 0 & data$soc_errands_limit == 0 & data$soc_participate_limit == 1, 3, 2))))
+
+# Create binaries for combinations of treatment and functional limitation
+data$txANDlimitation <- ifelse(data$any_mh_tx_12m == 1 & data$any_functional_limit == 1, 1,
+                               ifelse(data$any_mh_tx_12m == 0 | data$any_functional_limit == 0, 0, NA))
+
+data$limitationNOtx <- ifelse(data$any_functional_limit == 1 & data$any_mh_tx_12m == 0, 1,
+                              ifelse(data$any_functional_limit == 0 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$NoLimitationNOtx <- ifelse(data$any_functional_limit == 0 & data$any_mh_tx_12m == 0, 1,
+                                ifelse(data$any_functional_limit == 1 | data$any_mh_tx_12m == 1, 0, NA))
+
+data$txNOlimitation <- ifelse(data$any_mh_tx_12m == 1 & data$any_functional_limit == 0, 1,
+                              ifelse(data$any_mh_tx_12m == 0 | data$any_functional_limit == 1, 0, NA))
+
+# Create mh_utiliz_function variable
+data$mh_utiliz_function <- ifelse(data$NoLimitationNOtx == 1, 1,
+                                  ifelse(data$txNOlimitation == 1, 2,
+                                         ifelse(data$txANDlimitation == 1, 3,
+                                                ifelse(data$limitationNOtx == 1, 4, NA))))
+
+# Label mh_utiliz_function variable
+data$mh_utiliz_function <- factor(data$mh_utiliz_function,
+                                  levels = 1:4,
+                                  labels = c(
+                                    "No functional limitation and no MH treatment",
+                                    "MH treatment and no functional limitation",
+                                    "MH Treatment and functional limitation",
+                                    "Functional limitation and not using MH Treatments"
+                                  ))
+
+# Recode pain efficacy variable
+data$effective <- ifelse(data$PAINMEFF_A == 1, 1, ifelse(data$PAINMEFF_A == 2, 0, NA))
+
+# Functional impact of pain binaries
+data$CPNeverLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 1, 1,
+                             ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% 2:4, 0, NA))
+
+data$CPSometimesLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 2, 1,
+                                 ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 3, 4), 0, NA))
+
+data$CPMostDaysLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 3, 1,
+                                ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2, 4), 0, NA))
+
+data$CPEveryDayLimits <- ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A == 4, 1,
+                                ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2, 3), 0, NA))
+
+# Functional limitation affecting families
+data$FAMNeverHighImpact <- ifelse(data$PAIAFFM3M_A == 1, 1,
+                                  ifelse(data$PAIAFFM3M_A %in% c(2, 3, 4), 0, NA))
+
+data$FAMSometimesHiImpact <- ifelse(data$PAIAFFM3M_A == 2, 1,
+                                    ifelse(data$PAIAFFM3M_A %in% c(1, 3, 4), 0, NA))
+
+data$FAMMostDaysHighImpact <- ifelse(data$PAIAFFM3M_A == 3, 1,
+                                     ifelse(data$PAIAFFM3M_A %in% c(1, 2, 4), 0, NA))
+
+data$FAMEveryDayHighImpact <- ifelse(data$PAIAFFM3M_A == 4, 1,
+                                     ifelse(data$PAIAFFM3M_A %in% c(1, 2, 3), 0, NA))
+
+data$HighImpactFAM <- ifelse(data$PAIAFFM3M_A %in% c(3, 4), 1,
+                             ifelse(data$PAIAFFM3M_A %in% c(1, 2), 0, NA))
+
+# Frequency tables for variables
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+
+frequencies(data$DocSaidAnxiety)
+frequencies(data$DocSaidDepress)
+frequencies(data$DocSaidAnyMH)
+frequencies(data$DocNEVERsaidMH)
+frequencies(data$NOusualplace)
+frequencies(data$NOpaidSickLeave)
+frequencies(data$NOworkedLastWeek)
+frequencies(data$healthstatus)
+frequencies(data$any_functional_limit)
+frequencies(data$mh_utiliz_function)
+frequencies(data$CPNeverLimits)
+frequencies(data$CPSometimesLimits)
+frequencies(data$CPMostDaysLimits)
+frequencies(data$CPEveryDayLimits)
+frequencies(data$FAMNeverHighImpact)
+frequencies(data$FAMSometimesHiImpact)
+frequencies(data$FAMMostDaysHighImpact)
+frequencies(data$FAMEveryDayHighImpact)
+frequencies(data$HighImpactFAM)
+
+
+# Create MHscreeningAccurate variable
+data$MHscreeningAccurate <- ifelse(data$MHrelevance == 1 & data$DocSaidAnyMH == 1, 1,
+                                   ifelse(data$MHrelevance == 0 & data$DocSaidAnyMH == 1, 2,
+                                          ifelse(data$MHrelevance == 0 & data$DocSaidAnyMH == 0, 3,
+                                                 ifelse(data$MHrelevance == 1 & data$DocSaidAnyMH == 0, 4, NA))))
+
+# Label MHscreeningAccurate variable
+data$MHscreeningAccurate <- factor(data$MHscreeningAccurate,
+                                   levels = 1:4,
+                                   labels = c(
+                                     "Correctly Advised",
+                                     "Incorrectly Advised",
+                                     "Correctly Did Not Advise",
+                                     "Incorrectly Did Not Advise"
+                                   ))
+
+# Frequency tables for combinations of treatment and need variables
+frequencies <- function(x) {
+  table(x, useNA = "ifany")
+}
+
+frequencies(data$txANDsymptoms)
+frequencies(data$symptomsNOtx)
+frequencies(data$NoSymptomsNOtx)
+frequencies(data$txNOsymptoms)
+frequencies(data$mh_utiliz_need)
+frequencies(data$MHrelevance)
+frequencies(data$MHscreeningAccurate)
+

@@ -1,4 +1,4 @@
-﻿* Encoding: UTF-8.
+* Encoding: UTF-8.
 
 *open data file. 
 *use data file with suffix 20241127.
@@ -10,11 +10,11 @@
 *******************************************************************************************************
 ******************************************************************************************************
  *MENTAL HEALTH SYMPTOMS.     
-*create binary variables for mental health symptoms. 
+*create binary variables for mental health symptoms. GC DONE
 RECODE GADCAT_A (SYSMIS=SYSMIS) (3=1)(4=1)(1=0)(2=0) INTO anxiety.
 RECODE PHQCAT_A (SYSMIS=SYSMIS) (3=1)(4=1)(1=0)(2=0) INTO depression. 
    
-*Create binary variables for PHQ symptoms.
+*Create binary variables for PHQ symptoms. GC DONE
 
 RECODE PHQ81_A (SYSMIS=SYSMIS) (0=0)(1=1) (2=2) (3=3)  INTO anhedonia.
 RECODE PHQ82_A (SYSMIS=SYSMIS) (0=0)(1=1) (2=2) (3=3)  INTO sadness.
@@ -25,7 +25,7 @@ RECODE PHQ86_A (SYSMIS=SYSMIS) (0=0)(1=1) (2=2) (3=3)INTO guilt.
 RECODE PHQ87_A (SYSMIS=SYSMIS)  (0=0)(1=1) (2=2) (3=3) INTO concentration.
 RECODE PHQ88_A (SYSMIS=SYSMIS)  (0=0)(1=1) (2=2) (3=3)INTO psychomotor.
 
-*Create binary variables for GAD symptoms.
+*Create binary variables for GAD symptoms. GC TO DO IF NEEDED
 RECODE GAD71_A (SYSMIS=SYSMIS) (1=1)(2=2) (3=3)(4=4)  INTO nervous_on_edge.
 RECODE GAD72_A (SYSMIS=SYSMIS)  (1=1)(2=2) (3=3)(4=4) INTO cant_stop_worry.
 RECODE GAD73_A (SYSMIS=SYSMIS)  (1=1)(2=2) (3=3)(4=4)  INTO worry_differentThings.
@@ -37,6 +37,7 @@ RECODE GAD77_A (SYSMIS=SYSMIS)  (1=1)(2=2) (3=3)(4=4)  INTO fear_future_dread.
 COMPUTE PHQ8_count = SUM(anhedonia , sadness , sleep , energy , appetite ,  guilt , concentration , psychomotor).
 EXECUTE.
 
+* GC NEED TO DO
     FREQUENCIES VARIABLES= PHQ8_count depression
   /ORDER=ANALYSIS.
 
@@ -93,7 +94,7 @@ RECODE concentration (SYSMIS=SYSMIS) (0=0)(1=0)(2=1)(3=1) INTO ModSev_concentrat
 RECODE psychomotor (SYSMIS=SYSMIS) (0=0)(1=0)(2=1)(3=1) INTO ModSev_psychomotor_probs.
 
 **************************************GAD7*********************************************************.
-
+* GC TO DO IF NEEDED
 RECODE nervous_on_edge (SYSMIS=SYSMIS) (1=1)(2=0)(3=0)(4=0) INTO NOnervous_on_edge.
 RECODE cant_stop_worry (SYSMIS=SYSMIS) (1=1)(2=0)(3=0)(4=0) INTO NOcant_stop_worry.
 RECODE worry_differentThings (SYSMIS=SYSMIS) (1=1)(2=0)(3=0)(4=0) INTO NOworry_differentThings.
@@ -136,13 +137,14 @@ RECODE cant_sit_still (SYSMIS=SYSMIS) (1=0)(2=0)(3=1)(4=1)  INTO ModSev_cant_sit
 RECODE too_irritable (SYSMIS=SYSMIS)   (1=0)(2=0)(3=1)(4=1) INTO ModSev_irritable.
 RECODE fear_future_dread (SYSMIS=SYSMIS)    (1=0)(2=0)(3=1)(4=1) INTO ModSev_fear_future_dread.
 
-
+* GC TO DO
 COMPUTE mh_symptoms = $sysmis. 
 execute. 
 IF (depression = 1) OR (anxiety = 1) mh_symptoms = 1. 
 IF(depression = 0) AND (anxiety = 0) mh_symptoms = 0.
 EXECUTE.
 
+* GC TO DO
 COMPUTE mh_categorical = $sysmis. 
 execute. 
 IF (depression = 1) AND (anxiety = 0) mh_categorical = 1. 
@@ -163,7 +165,7 @@ Variable labels mh_categorical 'Type of mental health symptoms'.
     FREQUENCIES VARIABLES= anxiety depression mh_symptoms mh_categorical
   /ORDER=ANALYSIS.
 
-*CHRONIC PAIN SYMPTOMS.
+*CHRONIC PAIN SYMPTOMS. GC DONE
 
 RECODE PAIFRQ3M_A (SYSMIS=SYSMIS) (1=0) (2=0) (3=1) (4=1) INTO ChronicPain_any.
 VARIABLE LABELS  ChronicPain_any 'Experiences Pain Most Days or Every Day'.
@@ -173,12 +175,13 @@ RECODE PAIFRQ3M_A (SYSMIS=SYSMIS) (1=0) (2=1) (3=1) (4=1) INTO pain_any.
 VARIABLE LABELS  pain_any 'Experiences any pain'.
 EXECUTE.
 
+* GC TO DO (CHECK)
 RECODE ChronicPain_any (SYSMIS=SYSMIS) (0=1)(1=0) INTO NO_ChronicPain_any.
 VARIABLE LABELS  NO_ChronicPain_any 'DOES NOT Experience Pain Most Days or Every Day'.
 execute.
 
 
-*pain location/type.
+*pain location/type. GC TO DO IF NEEDED
 RECODE PAIBACK3M_A (SYSMIS=SYSMIS)(1=0 )(2=0)(3=1)(4=1)  INTO ModSevBackPain.
 RECODE PAIULMB3M_A (SYSMIS=SYSMIS) (1=0 )(2=0)(3=1)(4=1) INTO ModSevHandPain.
 RECODE PAILLMB3M_A (SYSMIS=SYSMIS) (1=0 )(2=0)(3=1)(4=1) INTO ModSevHipPain.
