@@ -97,3 +97,22 @@ label_variable(data$ChronicPain_any, "Experiences Pain Most Days or Every Day")
 data$pain_any <- recode(data$PAIFRQ3M_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
 label_variable(data$pain_any, "Experiences any pain")
 
+# Recoding and labeling functional limitations
+data$soc_work_limit <- recode(data$SOCWRKLIM_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
+data$soc_errands_limit <- recode(data$SOCERRNDS_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
+data$soc_participate_limit <- recode(data$SOCSCLPAR_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
+
+data$any_functional_limit <- with(data, ifelse(soc_work_limit == 1 | soc_errands_limit == 1 | soc_participate_limit == 1, 1, 0))
+label_variable(data$any_functional_limit, "Is functional Limitation Present")
+
+# Recoding general health status
+data$healthstatus <- recode(data$PHSTAT_A, old = c(1, 2, 3, 4, 5), new = c(5, 4, 3, 2, 1), na.rm = TRUE)
+label_variable(data$healthstatus, "General Health Status")
+
+# Recoding treatment-related variables
+data$anxiety_med_NOW <- recode(data$ANXMED_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
+data$depress_med_NOW <- recode(data$DEPMED_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
+data$any_mh_med_12m <- with(data, ifelse(anxiety_med_NOW == 1 | depress_med_NOW == 1, 1, 0))
+
+data$any_mh_therapy_12m <- recode(data$MHTHRPY_A, old = c(1, 2), new = c(1, 0), na.rm = TRUE)
+label_variable(data$any_mh_therapy_12m, "Any MH therapy in past 12 months")
