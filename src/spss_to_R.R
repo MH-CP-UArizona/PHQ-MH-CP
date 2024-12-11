@@ -90,3 +90,10 @@ for (i in seq_along(symptom_vars)) {
 phq8_cols <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
 data$PHQ8_count <- rowSums(data[phq8_cols], na.rm = TRUE)
 
+# Recoding chronic pain variables
+data$ChronicPain_any <- recode(data$PAIFRQ3M_A, old = c(1, 2, 3, 4), new = c(0, 0, 1, 1), na.rm = TRUE)
+label_variable(data$ChronicPain_any, "Experiences Pain Most Days or Every Day")
+
+data$pain_any <- recode(data$PAIFRQ3M_A, old = c(1, 2, 3, 4), new = c(0, 1, 1, 1), na.rm = TRUE)
+label_variable(data$pain_any, "Experiences any pain")
+
