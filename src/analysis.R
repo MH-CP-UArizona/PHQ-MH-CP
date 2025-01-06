@@ -32,7 +32,7 @@ pacman::p_load(
 pacman::p_load_gh("liamgilbey/ggwaffle")
 
 # Read in and glimpse data
-data <- read_csv(here("analysis", "data", "rawData", "20241021_NHISadult2019_data_newvars.csv"))  # Load data from CSV file located in "data" folder using `here()`
+data <- read_csv(here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))  # Load data from CSV file located in "data" folder using `here()`
 
 # Generating frequency tables for selected columns (Exploratory data analysis)
 ## Definition of depression (N = 2196 or `2188`, either based on `depression` variable or `mh_categorical`)
@@ -52,17 +52,6 @@ colnames(severity_table) <- c("Severity Level", "Frequency")
 # Print the table
 print(severity_table)
 
-# Print frequency tables
-names(frequency_tables) <- columns_to_analyze
-frequency_tables
-
-# Generate frequency tables with dplyr for all variables
-frequency_tables_dplyr <- data %>%
-  select(any_of(columns_to_analyze)) %>%
-  summarise(across(everything(), ~ list(table(.)))) %>%
-  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Frequency Table")
-
-print(frequency_tables_dplyr)
 data$HighImpactCP_largedenom-data$LowerImpactCP_largedenom
 
 # Mutually Exclusive Subpopulations: Create categorical variables for specific subpopulations based on conditions
@@ -95,14 +84,14 @@ print(fig1)
 
 ## Data wrangling for plotting / analysis
 # Define the symptoms
-symptoms <- c("NOanxiety", "NOdepression", "NOanhedonia", "NOblues", "NOsleep_probs", "NOenergy_probs", "NOeating_probs", "NOself_blame_probs", "NOconcentration_probs", "NOmoving_speed",
-              "SOMEanxiety", "SOMEdepression", "SOMEanhedonia", "SOMEblues", "SOMEsleep_probs", "SOMEenergy_probs", "SOMEeating_probs", "SOMEself_blame_probs", "SOMEconcentration_probs", "SOMEmoving_speed",
-              "MOSTLYanxiety", "MOSTLYdepression", "MOSTLYanhedonia", "MOSTLYblues", "MOSTLYsleep_probs", "MOSTLYenergy_probs", "MOSTLYeating_probs", "MOSTLYself_blame_probs", "MOSTLYconcentration_probs", "MOSTLYmoving_speed",
-              "ALWAYSanxiety", "ALWAYSdepression", "ALWAYSanhedonia", "ALWAYSblues", "ALWAYSsleep_probs", "ALWAYSenergy_probs", "ALWAYSeating_probs", "ALWAYSself_blame_probs", "ALWAYSconcentration_probs", "ALWAYSmoving_speed")
+symptoms <- c("NOanxiety", "NOdepression", "NOanhedonia", "NOsadness", "NOsleep", "NOenergy", "NOappetite", "NOguilt", "NOconcentration", "NOpsychomotor",
+              "SOMEanxiety", "SOMEdepression", "SOMEanhedonia", "SOMEsadness", "SOMEsleep", "SOMEenergy", "SOMEappetite", "SOMEguilt", "SOMEconcentration", "SOMEpsychomotor",
+              "MOSTLYanxiety", "MOSTLYdepression", "MOSTLYanhedonia", "MOSTLYsadness", "MOSTLYsleep", "MOSTLYenergy", "MOSTLYappetite", "MOSTLYguilt", "MOSTLYconcentration", "MOSTLYpsychomotor",
+              "ALWAYSanxiety", "ALWAYSdepression", "ALWAYSanhedonia", "ALWAYSsadness", "ALWAYSsleep", "ALWAYSenergy", "ALWAYSappetite", "ALWAYSguilt", "ALWAYSconcentration", "ALWAYSpsychomotor")
 
 # Extract symptom columns dynamically
 symptom_cols <- grep(paste(symptoms, collapse = "|"), colnames(df), value = TRUE)
-
+colnames(df)
 # Initialize a list to store results
 result_list <- list()
 
@@ -241,17 +230,7 @@ long_results <- do.call(rbind, lapply(split(final_results, final_results$subpopu
 rownames(long_results) <- NULL
 
 # Add symptom_labels using case_when
-long_results$symptom_labels <- dplyr::case_when(
-  long_results$symptom == "anhedonia" ~ "Anhedonia",
-  long_results$symptom == "blues" ~ "Sadness",
-  long_results$symptom == "eating_probs" ~ "Appetite",
-  long_results$symptom == "energy_probs" ~ "Energy",
-  long_results$symptom == "self_blame_probs" ~ "Guilt",
-  long_results$symptom == "sleep_probs" ~ "Sleep",
-  long_results$symptom == "concentration_probs" ~ "Concentration",
-  long_results$symptom == "moving_speed" ~ "Psychomotor",
-  TRUE ~ NA_character_
-)
+long_results$symptom_labels <- stringr::str_to_title(long_results$symptom)
 
 # Order symptom_labels and severity
 long_results$symptom_labels <- factor(long_results$symptom_labels, levels = c(
@@ -323,7 +302,7 @@ wafflePlot <- ggplot(
         c(
           "Depression and High Impact CP" = "Depression and High Impact CP\n(n=865)",
           "Depression and Low Impact CP" = "Depression and Low Impact CP\n(n=471)",
-          "Depression No CP" = "Depression No CP\n(n=853)"
+          "Depression No CP" = "Depression No CP\n(n=602)"
         ),
         default = label_wrap_gen(width = 10)
       ),
@@ -608,3 +587,10 @@ print(heatmap_gt_table_wide)
 
 # Save the GT table as an image (e.g., PNG format)
 gtsave(heatmap_gt_table_wide, filename = "analysis/figures/heatmap_gt_table.png")
+
+
+#> Set analysis (case oriented)
+#> Profiles like before
+#> Mean severity (bar)
+#> size possibly correlation to CP
+#> severity of symptom is color gradient

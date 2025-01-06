@@ -47,28 +47,97 @@ frequencies <- function(x) {
 frequencies(data$depression)
 frequencies(data$anxiety)
 
-# Recode severity categories for symptoms
-recode_severity <- function(var, levels) {
-  ifelse(is.na(var), NA, 
-         ifelse(var == levels[1], 1, 
-                ifelse(var == levels[2], 0, 
-                       ifelse(var == levels[3], 0, 
-                              ifelse(var == levels[4], 0, NA)))))
-}
+# Expanded recoding for all categories and variables
+# NO category recoding
+data$NOanhedonia <- ifelse(is.na(data$anhedonia), NA,
+                            ifelse(data$anhedonia == 0, 1, 0))
+data$NOsadness <- ifelse(is.na(data$sadness), NA,
+                          ifelse(data$sadness == 0, 1, 0))
+data$NOsleep <- ifelse(is.na(data$sleep), NA,
+                              ifelse(data$sleep == 0, 1, 0))
+data$NOenergy <- ifelse(is.na(data$energy), NA,
+                               ifelse(data$energy == 0, 1, 0))
+data$NOappetite <- ifelse(is.na(data$appetite), NA,
+                                 ifelse(data$appetite == 0, 1, 0))
+data$NOguilt <- ifelse(is.na(data$guilt), NA,
+                        ifelse(data$guilt == 0, 1, 0))
+data$NOconcentration <- ifelse(is.na(data$concentration), NA,
+                                      ifelse(data$concentration == 0, 1, 0))
+data$NOpsychomotor <- ifelse(is.na(data$psychomotor), NA,
+                              ifelse(data$psychomotor == 0, 1, 0))
 
-severity_categories <- list(
-  NO = c(0, 1, 2, 3),
-  SOME = c(1, 2, 3, 4),
-  MOSTLY = c(2, 1, 3, 4),
-  ALWAYS = c(3, 2, 1, 4),
-  ModSev = c(2, 3, 4, 1)
-)
+# SOME category recoding
+data$SOMEanhedonia <- ifelse(is.na(data$anhedonia), NA,
+                              ifelse(data$anhedonia == 1, 1, 0))
+data$SOMEsadness <- ifelse(is.na(data$sadness), NA,
+                            ifelse(data$sadness == 1, 1, 0))
+data$SOMEsleep <- ifelse(is.na(data$sleep), NA,
+                                ifelse(data$sleep == 1, 1, 0))
+data$SOMEenergy <- ifelse(is.na(data$energy), NA,
+                                 ifelse(data$energy == 1, 1, 0))
+data$SOMEappetite <- ifelse(is.na(data$appetite), NA,
+                                   ifelse(data$appetite == 1, 1, 0))
+data$SOMEguilt <- ifelse(is.na(data$guilt), NA,
+                          ifelse(data$guilt == 1, 1, 0))
+data$SOMEconcentration <- ifelse(is.na(data$concentration), NA,
+                                        ifelse(data$concentration == 1, 1, 0))
+data$SOMEpsychomotor <- ifelse(is.na(data$psychomotor), NA,
+                                ifelse(data$psychomotor == 1, 1, 0))
 
-for (cat in names(severity_categories)) {
-  for (var in symptom_names) {
-    data[[paste0(cat, var)]] <- recode_severity(data[[var]], severity_categories[[cat]])
-  }
-}
+# MOSTLY category recoding
+data$MOSTLYanhedonia <- ifelse(is.na(data$anhedonia), NA,
+                                ifelse(data$anhedonia == 2, 1, 0))
+data$MOSTLYsadness <- ifelse(is.na(data$sadness), NA,
+                              ifelse(data$sadness == 2, 1, 0))
+data$MOSTLYsleep <- ifelse(is.na(data$sleep), NA,
+                                  ifelse(data$sleep == 2, 1, 0))
+data$MOSTLYenergy <- ifelse(is.na(data$energy), NA,
+                                   ifelse(data$energy == 2, 1, 0))
+data$MOSTLYappetite <- ifelse(is.na(data$appetite), NA,
+                                     ifelse(data$appetite == 2, 1, 0))
+data$MOSTLYguilt <- ifelse(is.na(data$guilt), NA,
+                            ifelse(data$guilt == 2, 1, 0))
+data$MOSTLYconcentration <- ifelse(is.na(data$concentration), NA,
+                                          ifelse(data$concentration == 2, 1, 0))
+data$MOSTLYpsychomotor <- ifelse(is.na(data$psychomotor), NA,
+                                  ifelse(data$psychomotor == 2, 1, 0))
+
+# ALWAYS category recoding
+data$ALWAYSanhedonia <- ifelse(is.na(data$anhedonia), NA,
+                                ifelse(data$anhedonia == 3, 1, 0))
+data$ALWAYSsadness <- ifelse(is.na(data$sadness), NA,
+                              ifelse(data$sadness == 3, 1, 0))
+data$ALWAYSsleep <- ifelse(is.na(data$sleep), NA,
+                                  ifelse(data$sleep == 3, 1, 0))
+data$ALWAYSenergy <- ifelse(is.na(data$energy), NA,
+                                   ifelse(data$energy == 3, 1, 0))
+data$ALWAYSappetite <- ifelse(is.na(data$appetite), NA,
+                                     ifelse(data$appetite == 3, 1, 0))
+data$ALWAYSguilt <- ifelse(is.na(data$guilt), NA,
+                            ifelse(data$guilt == 3, 1, 0))
+data$ALWAYSconcentration <- ifelse(is.na(data$concentration), NA,
+                                          ifelse(data$concentration == 3, 1, 0))
+data$ALWAYSpsychomotor <- ifelse(is.na(data$psychomotor), NA,
+                                  ifelse(data$psychomotor == 3, 1, 0))
+
+# ModSev category recoding
+data$ModSevanhedonia <- ifelse(is.na(data$anhedonia), NA,
+                                ifelse(data$anhedonia %in% c(2, 3), 1, 0))
+data$ModSevsadness <- ifelse(is.na(data$sadness), NA,
+                              ifelse(data$sadness %in% c(2, 3), 1, 0))
+data$ModSevsleep <- ifelse(is.na(data$sleep), NA,
+                                  ifelse(data$sleep %in% c(2, 3), 1, 0))
+data$ModSevenergy <- ifelse(is.na(data$energy), NA,
+                                   ifelse(data$energy %in% c(2, 3), 1, 0))
+data$ModSevappetite <- ifelse(is.na(data$appetite), NA,
+                                     ifelse(data$appetite %in% c(2, 3), 1, 0))
+data$ModSevguilt <- ifelse(is.na(data$guilt), NA,
+                            ifelse(data$guilt %in% c(2, 3), 1, 0))
+data$ModSevconcentration <- ifelse(is.na(data$concentration), NA,
+                                          ifelse(data$concentration %in% c(2, 3), 1, 0))
+data$ModSevpsychomotor <- ifelse(is.na(data$psychomotor), NA,
+                                  ifelse(data$psychomotor %in% c(2, 3), 1, 0))
+
 
 # Create mental health symptoms variable
 data$mh_symptoms <- ifelse(data$depression == 1 | data$anxiety == 1, 1, 
@@ -739,3 +808,6 @@ data$HighSchoolGrad <- ifelse(data$EducCat == "2", 1, 0)
 data$SomeCollege <- ifelse(data$EducCat == "3", 1, 0)
 data$Bachelors <- ifelse(data$EducCat == "4", 1, 0)
 data$GradSchool <- ifelse(data$EducCat == "5", 1, 0)
+
+# Write final dataset
+write.csv(data, here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
