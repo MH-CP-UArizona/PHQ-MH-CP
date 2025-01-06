@@ -810,4 +810,4 @@ data$Bachelors <- ifelse(data$EducCat == "4", 1, 0)
 data$GradSchool <- ifelse(data$EducCat == "5", 1, 0)
 
 # Write final dataset
-write.csv(data, here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
+write.csv(data[536:735], here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
