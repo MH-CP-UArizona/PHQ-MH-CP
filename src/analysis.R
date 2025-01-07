@@ -203,6 +203,7 @@ rownames(final_results) <- NULL
 # View the final results
 print(final_results)
 
+
 # Convert final_results to long form
 long_results <- do.call(rbind, lapply(split(final_results, final_results$subpopulation), function(subpop_df) {
   # Pivot for each severity type
@@ -280,6 +281,7 @@ for (i in seq_along(symptom_labels)) {  # Loop through each symptom label
   color_mapping <- c(color_mapping, severity_colors)
 }
 
+table(data$ChronicPainOrdinal, data$anhedonia)
 
 # Generate the waffle plot to visualize the data by subpopulation and severity levels
 df |> group_by(subpopulation) |> summarise(n = n())
@@ -300,9 +302,9 @@ wafflePlot <- ggplot(
     labeller = labeller(
       subpopulation = as_labeller(
         c(
-          "Depression and High Impact CP" = "Depression and High Impact CP\n(n=865)",
-          "Depression and Low Impact CP" = "Depression and Low Impact CP\n(n=471)",
-          "Depression No CP" = "Depression No CP\n(n=602)"
+          "Depression and High Impact CP" = "Depression and High Impact CP\n(n=848)",
+          "Depression and Low Impact CP" = "Depression and Low Impact CP\n(n=466)",
+          "Depression No CP" = "Depression No CP\n(n=839)"
         ),
         default = label_wrap_gen(width = 10)
       ),

@@ -13,11 +13,20 @@ library(here)
 data <- read_csv(here("analysis", "data", "rawData", "NHIS_Adult2019_20241127.csv"))
 
 # Recode variables for mental health symptoms
-# Binary variables for mental health symptoms
+data$GADCAT_A <- ifelse(data$GADCAT_A == 8, NA, data$GADCAT_A)
 data$anxiety <- ifelse(data$GADCAT_A %in% c(3, 4), 1, ifelse(data$GADCAT_A %in% c(1, 2), 0, NA))
 data$depression <- ifelse(data$PHQCAT_A %in% c(3, 4), 1, ifelse(data$PHQCAT_A %in% c(1, 2), 0, NA))
 
 # Binary variables for PHQ symptoms
+data$PHQ81_A <- ifelse(data$PHQ81_A %in% c(7, 8, 9), NA, data$PHQ81_A)
+data$PHQ82_A <- ifelse(data$PHQ82_A %in% c(7, 8, 9), NA, data$PHQ82_A)
+data$PHQ83_A <- ifelse(data$PHQ83_A %in% c(7, 8, 9), NA, data$PHQ83_A)
+data$PHQ84_A <- ifelse(data$PHQ84_A %in% c(7, 8, 9), NA, data$PHQ84_A)
+data$PHQ85_A <- ifelse(data$PHQ85_A %in% c(7, 8, 9), NA, data$PHQ85_A)
+data$PHQ86_A <- ifelse(data$PHQ86_A %in% c(7, 8, 9), NA, data$PHQ86_A)
+data$PHQ87_A <- ifelse(data$PHQ87_A %in% c(7, 8, 9), NA, data$PHQ87_A)
+data$PHQ88_A <- ifelse(data$PHQ88_A %in% c(7, 8, 9), NA, data$PHQ88_A)
+
 symptom_vars <- c("PHQ81_A", "PHQ82_A", "PHQ83_A", "PHQ84_A", "PHQ85_A", "PHQ86_A", "PHQ87_A", "PHQ88_A")
 symptom_names <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
 
@@ -25,7 +34,18 @@ for (i in seq_along(symptom_vars)) {
   data[[symptom_names[i]]] <- ifelse(is.na(data[[symptom_vars[i]]]), NA, data[[symptom_vars[i]]])
 }
 
+# Filter out rows with NA in any of the symptoms columns
+data <- data[complete.cases(data[symptom_names]), ]
+
 # Binary variables for GAD symptoms
+data$GAD71_A <- ifelse(data$GAD71_A %in% c(7, 8, 9), NA, data$GAD71_A)
+data$GAD72_A <- ifelse(data$GAD72_A %in% c(7, 8, 9), NA, data$GAD72_A)
+data$GAD73_A <- ifelse(data$GAD73_A %in% c(7, 8, 9), NA, data$GAD73_A)
+data$GAD74_A <- ifelse(data$GAD74_A %in% c(7, 8, 9), NA, data$GAD74_A)
+data$GAD75_A <- ifelse(data$GAD75_A %in% c(7, 8, 9), NA, data$GAD75_A)
+data$GAD76_A <- ifelse(data$GAD76_A %in% c(7, 8, 9), NA, data$GAD76_A)
+data$GAD77_A <- ifelse(data$GAD77_A %in% c(7, 8, 9), NA, data$GAD77_A)
+
 gad_vars <- c("GAD71_A", "GAD72_A", "GAD73_A", "GAD74_A", "GAD75_A", "GAD76_A", "GAD77_A")
 gad_names <- c("nervous_on_edge", "cant_stop_worry", "worry_differentThings", "relax_probs", 
                "cant_sit_still", "too_irritable", "fear_future_dread")
@@ -45,6 +65,7 @@ frequencies <- function(x) {
 
 # Example: frequencies for depression and anxiety
 frequencies(data$depression)
+frequencies(data$PHQ8_count)
 frequencies(data$anxiety)
 
 # Expanded recoding for all categories and variables
@@ -157,135 +178,200 @@ frequencies(data$mh_symptoms)
 frequencies(data$mh_categorical)
 
 # Recode variables for chronic pain symptoms
-data$ChronicPain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA, 
-                               ifelse(data$PAIFRQ3M_A %in% c(3, 4), 1, 0))
-data$pain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA, 
+data$PAIFRQ3M_A <- ifelse(data$PAIFRQ3M_A %in% c(7, 8, 9), NA, data$PAIFRQ3M_A)
+data$PAIULMB3M_A <- ifelse(data$PAIULMB3M_A %in% c(7, 8, 9), NA, data$PAIULMB3M_A)
+data$PAILLMB3M_A <- ifelse(data$PAILLMB3M_A %in% c(7, 8, 9), NA, data$PAILLMB3M_A)
+data$PAIHDFC3M_A <- ifelse(data$PAIHDFC3M_A %in% c(7, 8, 9), NA, data$PAIHDFC3M_A)
+data$PAIAPG3M_A <- ifelse(data$PAIAPG3M_A %in% c(7, 8, 9), NA, data$PAIAPG3M_A)
+data$PAITOOTH3M_A <- ifelse(data$PAITOOTH3M_A %in% c(7, 8, 9), NA, data$PAITOOTH3M_A)
+data$PAIWKLM3M_A <- ifelse(data$PAIWKLM3M_A %in% c(7, 8, 9), NA, data$PAIWKLM3M_A)
+data$PAIAFFM3M_A <- ifelse(data$PAIAFFM3M_A %in% c(7, 8, 9), NA, data$PAIAFFM3M_A)
+data$PAIAMNT_A <- ifelse(data$PAIAMNT_A %in% c(7, 8, 9), NA, data$PAIAMNT_A)
+
+data$ChronicPain_any <- NA
+data$pain_any <- NA
+data$NO_ChronicPain_any <- NA
+data$HighImpactCP <- NA
+data$LowerImpactCP <- NA
+data$HighImpactCP_largedenom <- NA
+data$LowerImpactCP_largedenom <- NA
+data$HighFAMImpactCP <- NA
+data$LowerFAMImpactCP <- NA
+data$HighFAMImpactCP_largedenom <- NA
+data$LowerFAMImpactCP_largedenom <- NA
+data$HighFAMImpactCP_largedenomNESTED <- NA
+data$LowerFAMImpactCP_largedenomNESTED <- NA
+data$ChronicPainOrdinal <- NA
+data$anyChronicMigraine <- NA
+data$high_impact_ChronicMigraine <- NA
+data$high_FAMimpact_ChronicMigraine <- NA
+data$cooccurence <- NA
+data$chronic_migraine_cooccurence <- NA
+
+# Recode ChronicPain_any
+data$ChronicPain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA,
+                                      ifelse(data$PAIFRQ3M_A %in% c(3, 4), 1, 0))
+
+
+# Recode pain_any
+data$pain_any <- ifelse(is.na(data$PAIFRQ3M_A), NA,
                         ifelse(data$PAIFRQ3M_A %in% c(2, 3, 4), 1, 0))
-data$NO_ChronicPain_any <- ifelse(is.na(data$ChronicPain_any), NA, 
+
+# Recode NO_ChronicPain_any
+data$NO_ChronicPain_any <- ifelse(is.na(data$ChronicPain_any), NA,
                                   ifelse(data$ChronicPain_any == 0, 1, 0))
+
 
 # Recode pain location/type variables
 pain_vars <- c("PAIBACK3M_A", "PAIULMB3M_A", "PAILLMB3M_A", "PAIHDFC3M_A", "PAIAPG3M_A", "PAITOOTH3M_A")
 pain_names <- c("ModSevBackPain", "ModSevHandPain", "ModSevHipPain", "ModSevMigraine", "ModSevAbdominalPain", "ModSevToothPain")
 
+# ModSev pain variables
 for (i in seq_along(pain_vars)) {
-  data[[pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA, 
+  data[[pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA,
                                   ifelse(data[[pain_vars[i]]] %in% c(3, 4), 1, 0))
 }
 
+# Any pain variables
 any_pain_names <- c("anyBackPain", "anyHandPain", "anyHipPain", "anyMigraine", "anyAbdominalPain", "anyToothPain")
-
 for (i in seq_along(pain_vars)) {
-  data[[any_pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA, 
+  data[[any_pain_names[i]]] <- ifelse(is.na(data[[pain_vars[i]]]), NA,
                                       ifelse(data[[pain_vars[i]]] %in% c(2, 3, 4), 1, 0))
 }
 
 # Recode pain severity
-data$pain_severity <- ifelse(is.na(data$PAIAMNT_A), NA, 
-                             ifelse(data$PAIAMNT_A == 1, 1, 
-                                    ifelse(data$PAIAMNT_A == 2, 3, 
+data$pain_severity <- ifelse(is.na(data$PAIAMNT_A), NA,
+                             ifelse(data$PAIAMNT_A == 1, 1,
+                                    ifelse(data$PAIAMNT_A == 2, 3,
                                            ifelse(data$PAIAMNT_A == 3, 2, NA))))
 
-# Create severity labels
-severity_labels <- c("A little", "Somewhere between a little and a lot", "A lot")
-data$pain_severity_label <- factor(data$pain_severity, levels = 1:3, labels = severity_labels)
-
-# Recode into severity binary variables
-data$aLittlePain <- ifelse(is.na(data$pain_severity), NA, 
+# Create severity binary variables
+data$aLittlePain <- ifelse(is.na(data$pain_severity), NA,
                            ifelse(data$pain_severity == 1, 1, 0))
-data$betweenLittleandLot <- ifelse(is.na(data$pain_severity), NA, 
+data$betweenLittleandLot <- ifelse(is.na(data$pain_severity), NA,
                                    ifelse(data$pain_severity == 2, 1, 0))
-data$aLotPain <- ifelse(is.na(data$pain_severity), NA, 
+data$aLotPain <- ifelse(is.na(data$pain_severity), NA,
                         ifelse(data$pain_severity == 3, 1, 0))
 
-# Combination of pain and mental health symptoms
-data$cooccurence <- NA
-data$cooccurence <- ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 0, 1, 
-                           ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 0, 2, 
-                                  ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 1, 3, 
-                                         ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 1, 4, NA))))
-
 # Functional limitation variables
-data$HighImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
-                            ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1, 
+data$HighImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA,
+                            ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1,
                                    ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 0, NA)))
 
-data$LowerImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
-                             ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1, 
+data$LowerImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA,
+                             ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1,
                                     ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 0, NA)))
 
 # Functional limitation variables with larger denominator
-data$HighImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
-                                       ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1, 0))
+# Compute HighImpactCP_largedenom
+data$HighImpactCP_largedenom <- ifelse(
+  data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 1, # Chronic pain and high impact
+  ifelse(
+    data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 0, # Chronic pain but low impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
 
-data$LowerImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIWKLM3M_A), NA, 
-                                        ifelse(data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1, 0))
-
-# Subset for depression == 1
-depression_subset <- subset(data, depression == 1)
-
-# Frequencies for subset
-frequencies <- function(x) {
-  table(x, useNA = "ifany")
-}
-frequencies(depression_subset$ChronicPain_any)
-frequencies(depression_subset$LowerImpactCP_largedenom)
-frequencies(depression_subset$HighImpactCP_largedenom)
-
-# Compute High Family Impact for Chronic Pain
-data$HighFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
-                               ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
+# Compute LowerImpactCP_largedenom
+data$LowerImpactCP_largedenom <- ifelse(
+  data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(1, 2), 1, # Chronic pain and low impact
+  ifelse(
+    data$ChronicPain_any == 1 & data$PAIWKLM3M_A %in% c(3, 4), 0, # Chronic pain but high impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
+# High and Lower Family Impact
+data$HighFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA,
+                               ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1,
                                       ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 0, NA)))
 
-# Compute Lower Family Impact for Chronic Pain
-data$LowerFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
-                                ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1, 
+data$LowerFAMImpactCP <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA,
+                                ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1,
                                        ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 0, NA)))
 
-# High Family Impact with larger denominator
-data$HighFAMImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
-                                          ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 0))
+# Compute HighFAMImpactCP_largedenom
+data$HighFAMImpactCP_largedenom <- ifelse(
+  data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, # High family impact
+  ifelse(
+    data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 0, # Low family impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
 
-# High Family Impact with nested condition
-data$HighFAMImpactCP_largedenomNESTED <- ifelse(is.na(data$ChronicPain_any) | is.na(data$HighImpactCP_largedenom) | is.na(data$PAIAFFM3M_A), NA, 
-                                                ifelse(data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
-                                                       ifelse((data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, 
-                                                              ifelse(data$ChronicPain_any == 0, 0, NA))))
+# Compute HighFAMImpactCP_largedenomNESTED
+data$HighFAMImpactCP_largedenomNESTED <- ifelse(
+  data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, # High impact and high family impact
+  ifelse(
+    (data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, # Either chronic pain or high impact and low family impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
 
-# Lower Family Impact with larger denominator
-data$LowerFAMImpactCP_largedenom <- ifelse(is.na(data$ChronicPain_any) | is.na(data$PAIAFFM3M_A), NA, 
-                                           ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1, 
-                                                  ifelse(data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 0, 0)))
+# Compute LowerFAMImpactCP_largedenom
+data$LowerFAMImpactCP_largedenom <- ifelse(
+  data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(1, 2), 1, # Low family impact
+  ifelse(
+    data$ChronicPain_any == 1 & data$PAIAFFM3M_A %in% c(3, 4), 0, # High family impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
 
-# Lower Family Impact with nested condition
-data$LowerFAMImpactCP_largedenomNESTED <- ifelse(is.na(data$ChronicPain_any) | is.na(data$HighImpactCP_largedenom) | is.na(data$PAIAFFM3M_A), NA, 
-                                                 ifelse(data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, 
-                                                        ifelse((data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, 
-                                                               ifelse(data$ChronicPain_any == 0, 0, NA))))
+# Compute LowerFAMImpactCP_largedenomNESTED
+data$LowerFAMImpactCP_largedenomNESTED <- ifelse(
+  data$HighImpactCP_largedenom == 1 & data$PAIAFFM3M_A %in% c(3, 4), 1, # High impact and high family impact
+  ifelse(
+    (data$ChronicPain_any == 1 | data$HighImpactCP_largedenom == 1) & data$PAIAFFM3M_A %in% c(1, 2), 0, # Either chronic pain or high impact and low family impact
+    ifelse(
+      data$ChronicPain_any == 0, 0, # No chronic pain
+      NA # Missing values
+    )
+  )
+)
 
 # Compute Chronic Pain Ordinal variable
-data$ChronicPainOrdinal <- ifelse(is.na(data$ChronicPain_any) | is.na(data$LowerImpactCP_largedenom) | is.na(data$HighImpactCP_largedenom), NA, 
-                                  ifelse(data$ChronicPain_any == 0, 1, 
-                                         ifelse(data$ChronicPain_any == 1 & data$LowerImpactCP_largedenom == 1, 2, 
-                                                ifelse(data$ChronicPain_any == 1 & data$HighImpactCP_largedenom == 1, 3, NA))))
+data$ChronicPainOrdinal <- ifelse(
+  data$ChronicPain_any == 0, 1, # No chronic pain
+  ifelse(
+    data$ChronicPain_any == 1 & data$LowerImpactCP_largedenom == 1, 2, # Chronic pain with lower impact
+    ifelse(
+      data$ChronicPain_any == 1 & data$HighImpactCP_largedenom == 1, 3, # Chronic pain with high impact
+      NA # Missing values
+    )
+  )
+)
 
 # Compute any Chronic Migraine
-data$anyChronicMigraine <- ifelse(is.na(data$anyMigraine) | is.na(data$ChronicPain_any), NA, 
+data$anyChronicMigraine <- ifelse(is.na(data$anyMigraine) | is.na(data$ChronicPain_any), NA,
                                   ifelse(data$anyMigraine == 1 & data$ChronicPain_any == 1, 1, 0))
 
-# Compute High Impact Chronic Migraine
-data$high_impact_ChronicMigraine <- ifelse(is.na(data$anyChronicMigraine) | is.na(data$HighImpactCP_largedenom), NA, 
+# High-Impact Chronic Migraine
+data$high_impact_ChronicMigraine <- ifelse(is.na(data$anyChronicMigraine) | is.na(data$HighImpactCP_largedenom), NA,
                                            ifelse(data$anyChronicMigraine == 1 & data$HighImpactCP_largedenom == 1, 1, 0))
 
 # Compute High Family Impact Chronic Migraine
 data$high_FAMimpact_ChronicMigraine <- ifelse(is.na(data$high_impact_ChronicMigraine) | is.na(data$HighFAMImpactCP_largedenom), NA, 
                                               ifelse(data$high_impact_ChronicMigraine == 1 & data$HighFAMImpactCP_largedenom == 1, 1, 0))
 
-# Compute cooccurrence variable
-data$cooccurence <- ifelse(is.na(data$ChronicPain_any) | is.na(data$mh_symptoms), NA, 
-                           ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 0, 1, 
-                                  ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 0, 2, 
-                                         ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 1, 3, 
+# Co-occurrence of Chronic Pain and MH Symptoms
+data$cooccurence <- ifelse(is.na(data$ChronicPain_any) | is.na(data$mh_symptoms), NA,
+                           ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 0, 1,
+                                  ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 0, 2,
+                                         ifelse(data$ChronicPain_any == 0 & data$mh_symptoms == 1, 3,
                                                 ifelse(data$ChronicPain_any == 1 & data$mh_symptoms == 1, 4, NA)))))
 
 # Label cooccurence values
@@ -810,4 +896,4 @@ data$Bachelors <- ifelse(data$EducCat == "4", 1, 0)
 data$GradSchool <- ifelse(data$EducCat == "5", 1, 0)
 
 # Write final dataset
-write.csv(data[536:735], here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
+write.csv(data[535:732], here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
