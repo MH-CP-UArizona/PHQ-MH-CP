@@ -31,8 +31,11 @@ symptom_vars <- c("PHQ81_A", "PHQ82_A", "PHQ83_A", "PHQ84_A", "PHQ85_A", "PHQ86_
 symptom_names <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
 
 for (i in seq_along(symptom_vars)) {
-  data[[symptom_names[i]]] <- ifelse(is.na(data[[symptom_vars[i]]]), NA, data[[symptom_vars[i]]])
+  data[[symptom_names[i]]] <- ifelse(is.na(data[[symptom_vars[i]]]), NA, data[[symptom_vars[i]]] - 1)
 }
+
+# Verify the adjustment
+summary(data[symptom_names])
 
 # Filter out rows with NA in any of the symptoms columns
 data <- data[complete.cases(data[symptom_names]), ]
@@ -407,6 +410,9 @@ subset_chronic_migraine_cooccurence <- subset(data, chronic_migraine_cooccurence
 frequencies(subset_chronic_migraine_cooccurence$chronic_migraine_cooccurence)
 
 # Recode variables for treatment-related measures
+
+
+
 data$anxiety_med_NOW <- ifelse(data$ANXMED_A == 1, 1, ifelse(data$ANXMED_A == 2, 0, NA))
 data$depress_med_NOW <- ifelse(data$DEPMED_A == 1, 1, ifelse(data$DEPMED_A == 2, 0, NA))
 data$other_mh_med_12m <- ifelse(data$MHRX_A == 1, 1, ifelse(data$MHRX_A == 2, 0, NA))

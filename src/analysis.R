@@ -52,8 +52,6 @@ colnames(severity_table) <- c("Severity Level", "Frequency")
 # Print the table
 print(severity_table)
 
-data$HighImpactCP_largedenom-data$LowerImpactCP_largedenom
-
 # Mutually Exclusive Subpopulations: Create categorical variables for specific subpopulations based on conditions
 data$subpopulation <- with(data, factor(ifelse(
   LowerImpactCP_largedenom == 1 & depression == 1, "Depression and Low Impact CP",
@@ -249,7 +247,7 @@ long_results <- long_results |> arrange(symptom_labels, severity)
 
 # View the long-format data
 print(long_results)
-
+ 
 
 # Waffle chart
 # Define severity levels in order from light to dark
@@ -280,8 +278,6 @@ for (i in seq_along(symptom_labels)) {  # Loop through each symptom label
   # Append to the color mapping
   color_mapping <- c(color_mapping, severity_colors)
 }
-
-table(data$ChronicPainOrdinal, data$anhedonia)
 
 # Generate the waffle plot to visualize the data by subpopulation and severity levels
 df |> group_by(subpopulation) |> summarise(n = n())
