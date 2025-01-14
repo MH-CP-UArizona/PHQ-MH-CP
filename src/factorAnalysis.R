@@ -5,6 +5,7 @@ library(UpSetR) # For performing upset plots
 library(here)
 library(lavaan)
 library(semPlot)
+library(gt)
 
 # Load the data (update the file path accordingly)
 data <- read.csv(here("analysis", "data", "derivedData", "GC_20241021_NHISadult2019_data_newvars.csv"))
@@ -103,7 +104,35 @@ cfa_model <- '
 fit <- cfa(cfa_model, data = cfa_data, std.lv = TRUE)
 
 # Summarize the model results
-summary(fit, fit.measures = TRUE, standardized = TRUE)
+# Extract parameter estimates as a data frame
+cfa_results <- as.data.frame(parameterEstimates(fit, standardized = TRUE))
+
+# Filter and clean the table to keep only factor loadings (latent =~ observed)
+clean_table <- cfa_results %>%
+  filter(op == "=~") %>%  # Keep only factor loadings
+  select(lhs, rhs, est, se, z, pvalue, std.all) %>%
+  rename(
+    Latent_Variable = lhs,
+    Observed_Variable = rhs,
+    Estimate = est,
+    Std_Error = se,
+    Z_Value = z,
+    P_Value = pvalue,
+    Std_Loading = std.all
+  )
+
+gt_table <- clean_table %>%
+  gt() %>%
+  tab_header(
+    title = "CFA Factor Loadings",
+    subtitle = "Confirmatory Factor Analysis Results"
+  ) %>%
+  fmt_number(columns = c(Estimate, Std_Error, Z_Value, Std_Loading), decimals = 3) %>%
+  fmt_number(columns = P_Value, decimals = 3)
+
+# Save the gt table as an image
+gtsave(gt_table, "analysis/figures/cfa_table.png")
 
 # Visualize the model (optional)
 semPaths(fit, what = "std", edge.label.cex = 1.2, layout = "tree", title = TRUE)
+??semPaths
