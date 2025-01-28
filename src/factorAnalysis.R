@@ -14,7 +14,7 @@ data <- read.csv(here("analysis", "data", "derivedData", "GC_20241021_NHISadult2
 depression_positive_data <- data %>% filter(depression == 1)
 
 # Select symptom severity variables and ChronicPain_any
-symptom_vars <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration")
+symptom_vars <- c("anhedonia", "sadness", "sleep", "energy", "appetite", "guilt", "concentration", "psychomotor")
 cp_indicator <- "ChronicPain_any"
 symptom_data <- depression_positive_data %>% select(all_of(symptom_vars), all_of(cp_indicator))
 
@@ -27,7 +27,7 @@ fa_with_cp <- fa(with_cp, nfactors = 1, rotate = "varimax")
 print("Factor Analysis for Individuals WITH Chronic Pain")
 print(fa_with_cp)
 fa.diagram(fa_with_cp)
-
+??fa
 # Perform factor analysis for individuals without chronic pain
 fa_without_cp <- fa(without_cp, nfactors = 1, rotate = "varimax")
 print("Factor Analysis for Individuals WITHOUT Chronic Pain")
@@ -64,6 +64,7 @@ without_cp <- symptom_data_binary %>% filter(!!sym(cp_indicator) == 0) %>% selec
 # Create UpSet plots for each group
 par(mfrow = c(1, 2))  # Set up side-by-side layout for plots
 
+## MAKE ANHEDONIA MOD-SEVERE AND ALSO SEVERE
 # Plot for individuals with chronic pain
 upset(
   with_cp,
@@ -110,9 +111,8 @@ cfa_results <- as.data.frame(parameterEstimates(fit, standardized = TRUE))
 # Filter and clean the table to keep only factor loadings (latent =~ observed)
 clean_table <- cfa_results %>%
   filter(op == "=~") %>%  # Keep only factor loadings
-  select(lhs, rhs, est, se, z, pvalue, std.all) %>%
+  select(rhs, est, se, z, pvalue, std.all) %>%
   rename(
-    Latent_Variable = lhs,
     Observed_Variable = rhs,
     Estimate = est,
     Std_Error = se,
@@ -121,18 +121,48 @@ clean_table <- cfa_results %>%
     Std_Loading = std.all
   )
 
+# Extract model fit information
+fit_measures <- fitMeasures(fit, c("cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr", "aic", "bic"))
+
+# Format model fit into a string
+fit_text <- paste(
+  "**Model Fit:**", "<br>",
+  "CFI =", round(fit_measures["cfi"], 2), "<br>",
+  "TLI =", round(fit_measures["tli"], 2), "<br>",
+  "RMSEA =", round(fit_measures["rmsea"], 2), " (90% CI: ", round(fit_measures["rmsea.ci.lower"], 2), "-", round(fit_measures["rmsea.ci.upper"], 2), ")<br>",
+  "SRMR =", round(fit_measures["srmr"], 2), "<br>",
+  "AIC =", round(fit_measures["aic"], 2), "<br>",
+  "BIC =", round(fit_measures["bic"], 2)
+)
+
+# Create a gt table with the model fit in the footer
 gt_table <- clean_table %>%
   gt() %>%
   tab_header(
-    title = "CFA Factor Loadings",
-    subtitle = "Confirmatory Factor Analysis Results"
+    title = "CFA Results",
+    subtitle = "Confirmatory Factor Analysis with Model Fit Information"
   ) %>%
-  fmt_number(columns = c(Estimate, Std_Error, Z_Value, Std_Loading), decimals = 3) %>%
-  fmt_number(columns = P_Value, decimals = 3)
+  cols_label(
+    Observed_Variable = "Observed Variable",
+    Estimate = "Estimate",
+    Std_Error = "Standard Error",
+    Z_Value = "Z Value",
+    P_Value = "P Value",
+    Std_Loading = "Standardized Loading"
+  ) %>%
+  fmt_number(columns = c(Estimate, Std_Error, Z_Value, Std_Loading), decimals = 2) %>%
+  fmt_number(columns = P_Value, decimals = 3) %>%
+  tab_source_note(
+    source_note = md(fit_text)  # Include model fit information with line breaks
+  ) %>%
+  tab_options(table.font.size = "small")
 
 # Save the gt table as an image
 gtsave(gt_table, "analysis/figures/cfa_table.png")
 
 # Visualize the model (optional)
 semPaths(fit, what = "std", edge.label.cex = 1.2, layout = "tree", title = TRUE)
-??semPaths
+
+## CORRESPONDENSE ANALYSIS
+
+
