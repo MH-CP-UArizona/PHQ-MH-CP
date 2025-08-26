@@ -8,20 +8,13 @@
 
 
 ## Overview
-This repository is organized as a reproducible research compendium. Future updates to this compendium will include a Dockerfile and Binder Container
+This repository is organized as a reproducible research compendium.
 
 ## File Organization
 
     analysis/
     |
-    ├── logs/
-    │   └── log.md          # log of any progress or relevant information
-    |
     ├── figures/            # location of the figures produced for the manuscript
-    |
-    ├── data/
-    |   ├── rawData/        # data obtained from elsewhere
-    │   └── derivedData/    # data generated from rawData/ and scripts.*
     |   
     └── supplementaryMaterials/
         ├── supplementaryFigures/     
@@ -30,7 +23,7 @@ This repository is organized as a reproducible research compendium. Future updat
                             # supplementary tables for the main manuscript 
     
     src/           # R scripts to run in the following order (also see associated README.md)
-        └── analysis.R        # Analysis script used to wrangle the raw data, produce figures, analyses, and supplementary materials
-
+        ├── TBD.R
+        └── analysis.R      # Descriptive analysis (main)
         
 
