@@ -1,6 +1,6 @@
 # PHQ Mental Health + Chronic Pain Comorbidity
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![DOI](https://zenodo.org/badge/889171021.svg)](https://doi.org/10.5281/zenodo.16954664)
 
 ## A compendium of code, data, and author's manuscript accompanying the manuscript: 
 De La Rosa, J. S., Chism, G. T., Herder, K. E., Mun, C. J., & Aaron, R. V. (2025). Reliability and cross-group equivalence of the 8-item version of the Patient Health Questionnaire (PHQ-8) to screen for depression in adults with and without chronic pain: a nationally representative US population study. medRxiv, 2025-08.
