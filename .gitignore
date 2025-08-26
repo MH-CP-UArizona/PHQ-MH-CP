@@ -7,4 +7,7 @@ src/*.so
 src/*.dll
 .DS_Store
 src/zombie*
+src/upset.R
+src/factorAnalysisZombie.R
+src/analysis_jdlrZombie.R
 *.Rproj

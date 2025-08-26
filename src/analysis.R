@@ -1,5 +1,5 @@
 ####################################################################################################################
-## Author: Greg Chism
+## Author: Greg Chism + Jennifer De La Rosa
 ## Date: November 2024
 ## email: gchism@arizona.edu
 ## Project: MH & CP MS3 Depression Symptoms
@@ -15,6 +15,7 @@ pacman::p_load(
   cowplot,          # Plot arrangement and combining
   ggthemes,         # Additional themes for ggplot2
   ggpubr,           # Publication-ready ggplot2 visualizations
+  ggridges,         # Ridgeline plots
   gt,               # Create tables with advanced formatting
   here,             # Manage file paths in a project
   patchwork,        # Arrange ggplots into layouts
@@ -53,32 +54,18 @@ colnames(severity_table) <- c("Severity Level", "Frequency")
 print(severity_table)
 
 # Mutually Exclusive Subpopulations: Create categorical variables for specific subpopulations based on conditions
-data$subpopulation <- with(data, factor(ifelse(
-  LowerImpactCP_largedenom == 1 & depression == 1, "Depression and Low Impact CP",
-  ifelse(ChronicPain_any == 0 & depression == 1, "Depression No CP",
-         ifelse(HighImpactCP_largedenom == 1 & LowerImpactCP_largedenom == 0 & depression == 1, "Depression and High Impact CP", NA)
-         )
-  )
-))
+data$subpopulation <- with(data, factor(
+  ifelse(depression == 1 & LowerImpactCP_largedenom == 1, "Depression and Low Impact CP",
+         ifelse(depression == 1 & HighImpactCP_largedenom == 1 & LowerImpactCP_largedenom == 0, "Depression and High Impact CP",
+                ifelse(depression == 1 & ChronicPain_any == 0, "Depression No CP",
+                       ifelse(depression == 0 & LowerImpactCP_largedenom == 1, "No Depression and Low Impact CP",
+                              ifelse(depression == 0 & HighImpactCP_largedenom == 1 & LowerImpactCP_largedenom == 0, "No Depression and High Impact CP",
+                                     ifelse(depression == 0 & ChronicPain_any == 0, "No Depression and No CP", NA
+                                     )))))))
+)
 
 # Filter rows where depression == 1 and subpopulation is not NA
-df <- subset(data, depression == 1 & !is.na(subpopulation))
-
-# Box Plot Figure
-# Visualize PHQ Scores by Subpopulation using a box plot
-fig1 <- df %>%
-  mutate(subpopulation = fct_relevel(subpopulation, c("Depression No CP", "Depression and Low Impact CP", "Depression and High Impact CP"))) %>%   # Reorder levels of subpopulation factor
-  drop_na(subpopulation) %>%  # Drop rows where subpopulation is NA
-  ggplot(aes(x = PHQ8_count, y = subpopulation, fill = subpopulation)) +
-  geom_boxplot(width = 0.5) +  # Create a box plot
-  scale_fill_colorblind() +  # Apply colorblind-friendly colors
-  labs(title = "PHQ Scores by Subpopulation", x = "PHQ Scores", y = NULL) +  # Set axis labels and title
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "none")  # Hide legend
-
-print(fig1)
-
-### TO DO Add pairwise testing (Dunn's test w/ post hoc)
+df <- subset(data, !is.na(subpopulation))
 
 ## Data wrangling for plotting / analysis
 # Define the symptoms
@@ -89,7 +76,7 @@ symptoms <- c("NOanxiety", "NOdepression", "NOanhedonia", "NOsadness", "NOsleep"
 
 # Extract symptom columns dynamically
 symptom_cols <- grep(paste(symptoms, collapse = "|"), colnames(df), value = TRUE)
-colnames(df)
+
 # Initialize a list to store results
 result_list <- list()
 
@@ -229,13 +216,26 @@ long_results <- do.call(rbind, lapply(split(final_results, final_results$subpopu
 rownames(long_results) <- NULL
 
 # Add symptom_labels using case_when
-long_results$symptom_labels <- stringr::str_to_title(long_results$symptom)
+long_results$symptom_labels <- stringr::str_to_title(long_results$symptom) 
 
 # Order symptom_labels and severity
-long_results$symptom_labels <- factor(long_results$symptom_labels, levels = c(
-  "Anhedonia", "Sadness", "Appetite", "Energy",
-  "Guilt", "Sleep", "Concentration", "Psychomotor"
-))
+long_results <- long_results %>%
+  mutate(
+    symptom_labels = case_when(
+      symptom == "anhedonia" ~ "PHQ-1\nAnhedonia",
+      symptom == "sadness" ~ "PHQ-2\nSadness/Blues",
+      symptom == "energy" ~ "PHQ-3\nFatigue/Energy",
+      symptom == "sleep" ~ "PHQ-4\nSleep",
+      symptom == "appetite" ~ "PHQ-5\nAppetite",
+      symptom == "guilt" ~ "PHQ-6\nSelf-Blame/Guilt",
+      symptom == "concentration" ~ "PHQ-7\nConcentration",
+      symptom == "psychomotor" ~ "PHQ-8\nPsychomotor"
+    ),
+    symptom_labels = factor(symptom_labels, levels = c(
+      "PHQ-1\nAnhedonia", "PHQ-2\nSadness/Blues", "PHQ-3\nFatigue/Energy", "PHQ-4\nSleep",
+      "PHQ-5\nAppetite", "PHQ-6\nSelf-Blame/Guilt", "PHQ-7\nConcentration", "PHQ-8\nPsychomotor"
+    ))
+  )
 
 long_results$severity <- factor(long_results$severity, levels = c("Always", "Mostly", "Some", "No"))  # Order severity levels
 
@@ -282,9 +282,10 @@ for (i in seq_along(symptom_labels)) {  # Loop through each symptom label
 # Generate the waffle plot to visualize the data by subpopulation and severity levels
 df |> group_by(subpopulation) |> summarise(n = n())
 
-wafflePlot <- ggplot(
-  long_results,
-  aes(fill = fill_value, values = n_count)
+wafflePlot <- 
+  long_results %>%
+  filter(grepl("^Depression", subpopulation)) |>
+  ggplot(aes(fill = fill_value, values = n_count)
 ) +
   waffle::geom_waffle(
     n_rows = 10,
@@ -293,14 +294,13 @@ wafflePlot <- ggplot(
     na.rm = TRUE
   ) +
   facet_grid(
-    subpopulation ~ symptom_labels,
-    switch = "both",
+    symptom_labels ~ subpopulation, 
     labeller = labeller(
       subpopulation = as_labeller(
         c(
-          "Depression and High Impact CP" = "Depression and High Impact CP\n(n=848)",
-          "Depression and Low Impact CP" = "Depression and Low Impact CP\n(n=466)",
-          "Depression No CP" = "Depression No CP\n(n=839)"
+          "Depression and High Impact CP" = "HICP\n(n=848)",
+          "Depression and Low Impact CP" = "LICP\n(n=466)",
+          "Depression No CP" = "No CP\n(n=839)"
         ),
         default = label_wrap_gen(width = 10)
       ),
@@ -313,10 +313,12 @@ wafflePlot <- ggplot(
     values = color_mapping
   ) +
   labs(
-    title = "Waffle Plot by Subpopulation and Severity",
+    title = "Positive Depression Screen (n=2153)",
     fill = "Severity"
   ) +
   theme(
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    
     strip.text = element_text(size = 10),
     legend.position = "none",
     panel.background = element_rect(fill = "white"),
@@ -325,270 +327,226 @@ wafflePlot <- ggplot(
     axis.ticks = element_blank(),
     strip.background.x = element_rect(fill = "white", color = "white"),
     strip.background.y = element_rect(fill = "white", color = "white"),
-    strip.text.x = element_text(color = "black", size = 8.4),
-    strip.text.y.left = element_text(color = "black", size = 8.4, angle = 0, hjust = 1)
+    strip.text.x = element_text(hjust = 0.5, color = "black", size = 10),
+    strip.text.y.right = element_text(color = "black", size = 10),
+    strip.placement = "outside",
+    strip.placement.x = "top",
+    strip.placement.y = "left"
   )
 
-
-# Custom legend
-# Define custom colors for severity levels in black and white
-bw_colors <- c(
-  "Always" = "#000000",  # Black
-  "Mostly" = "#555555",  # Dark Gray
-  "Some" = "#AAAAAA",    # Light Gray
-  "No" = "#FFFFFF"       # White
+# PNG
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_depression.png",
+  plot = wafflePlot,
+  width = 4, height = 10,
+  dpi = 400
 )
 
-# Create a simplified data frame for the custom legend
-legend_data <- data.frame(
-  severity = factor(severity_levels, levels = severity_levels),
-  fill_value = severity_levels,  # Using severity levels directly for the legend
-  n_count = 1  # Dummy values for counts to create legend only
+# PDF
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_depression.pdf",
+  plot = wafflePlot,
+  width = 4, height = 10,
+  device = cairo_pdf  # better text rendering
 )
 
-# Create the custom legend plot
-legend_plot <- ggplot(
-  legend_data,
-  aes(fill = severity, values = n_count)
-) +
+# SVG
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_depression.svg",
+  plot = wafflePlot,
+  width = 4, height = 10,
+  device = "svg"
+)
+
+wafflePlotNoDP <- 
+  long_results %>%
+  filter(grepl("^No Depression", subpopulation)) %>% 
+  ggplot(aes(fill = fill_value, values = n_count)
+  ) +
   waffle::geom_waffle(
-    n_rows = 1,         # One row, since we're only creating a legend
-    color = "gray",     # Border color
-    flip = TRUE
+    n_rows = 10,
+    color = "gray",
+    flip = TRUE,
+    na.rm = TRUE
   ) +
+  facet_grid(
+    symptom_labels ~ subpopulation, 
+    labeller = labeller(
+      subpopulation = as_labeller(
+        c(
+          "No Depression and High Impact CP" = "HICP\n(n=1763)",
+          "No Depression and Low Impact CP" = "LICP\n(n=3981)",
+          "No Depression and No CP" = "No CP\n(n=23086)"
+        ),
+        default = label_wrap_gen(width = 10)
+      ),
+      symptom_labels = label_wrap_gen(width = 10)
+    )
+  ) +
+  coord_equal() +
+  theme_enhance_waffle() +
   scale_fill_manual(
-    values = bw_colors,   # Use black and white colors for the legend
-    guide = guide_legend(title = "Severity", direction = "horizontal")
+    values = color_mapping
   ) +
-  theme_void()  # Simplify theme for the legend
-
-# Extract the legend using cowplot::get_legend
-legend <- cowplot::get_legend(legend_plot)  # Extract legend from the custom legend plot
-
-# Combine waffle plot with legend, stacking vertically
-combined_plot <- plot_grid(wafflePlot, legend, ncol = 1, rel_heights = c(4, 0.3))  # Combine main plot and legend, adjust heights
-
-# Print the combined plot
-print(combined_plot)  # Display the combined waffle plot
-
-
-# Dumbbell plot of differences
-dumbbell <- long_results |> 
-  ggplot(aes(x = fct_rev(subpopulation), y =  prop, group = severity)) + 
-  geom_line() +
-  geom_point(size = 2, shape = 21, color = "black", aes(fill = interaction(symptom_labels, severity))) + 
-  facet_wrap(~ symptom_labels) +
-  labs(x = NULL, y = "Proportion") + 
-  scale_fill_manual(
-    values = color_mapping,    # Ensure that color_mapping aligns with severity levels
-    guide = guide_legend(reverse = TRUE)  # Reverse legend order if desired
+  labs(
+    title = "Negative Depression Screen (n=28830)",
+    fill = "Severity"
   ) +
-  theme_minimal() +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    strip.text = element_text(size = 10),
+    legend.position = "none",
+    panel.background = element_rect(fill = "white"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    strip.background.x = element_rect(fill = "white", color = "white"),
+    strip.background.y = element_rect(fill = "white", color = "white"),
+    strip.text.x = element_text(hjust = 0.5, color = "black", size = 10),
+    strip.text.y.right = element_text(color = "black", size = 10),
+    strip.placement = "outside",
+    strip.placement.x = "top",
+    strip.placement.y = "left"
+  )
 
-
-legend_plot_point <- ggplot(
-  legend_data,
-  aes(x = severity, y = n_count, fill = severity)
-) +
-  geom_point(size = 3, shape = 21, color = "black") +  # Use points to represent each severity level
-  scale_fill_manual(
-    values = bw_colors,   # Use black and white colors for the legend
-    guide = guide_legend(title = "Severity", direction = "horizontal")
-  ) +
-  theme_void()   # Simplify theme for the legend
-
-# Extract the legend using cowplot::get_legend
-legend <- cowplot::get_legend(legend_plot_point)  # Extract legend from the custom legend plot
-
-# Combine waffle plot with legend, adjusting space between them
-combined_plot <- plot_grid(
-  legend,
-  dumbbell, 
-  nrow = 2, 
-  rel_heights = c(0.1, 1),  # Reduce height of the legend to minimize space
-  align = "v",               # Align vertically
-  axis = "tb"                # Align top and bottom axis
+#PNG
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_Nodepression.png",
+  plot = wafflePlotNoDP,
+  width = 4, height = 10,  # Adjust dimensions as needed
+  dpi = 400
 )
 
-print(combined_plot)
+# PDF
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_Nodepression.pdf",
+  plot = wafflePlotNoDP,
+  width = 4, height = 10,
+  device = cairo_pdf  # better text rendering
+)
 
-# Import required libraries
-# This code relies on libraries such as dplyr, ggplot2, and gt.
-# Statistics: 
-## CMH Test
-# Prepare data for the Cochran-Mantel-Haenszel (CMH) Test
-cmh_data <- long_results %>%
-  mutate(
-    # Convert 'severity' to a factor with levels specified in a particular order
-    severity = factor(severity, levels = c("No", "Some", "Mostly", "Always")),
-    # Convert 'subpopulation' and 'symptom' to factors for further analysis
-    subpopulation = as.factor(subpopulation),
-    symptom = as.factor(symptom)
-  )
+# SVG
+ggsave(
+  filename = "analysis/figures/fig1_waffle_plot_Nodepression.svg",
+  plot = wafflePlotNoDP,
+  width = 4, height = 10,
+  device = "svg"
+)
 
-# Create a contingency table for the CMH Test
-# Use the xtabs function to create a contingency table of counts (n_count) categorized by subpopulation, severity, and symptom
-cmh_table <- xtabs(n_count ~ subpopulation + severity + symptom, data = cmh_data)
+###########################FIGURE 1 ################################
+# Author Jennifer De La Rosa
+####both density plots need numeric PHQ-8 and factor Chronic Pain Ordinal
+##############################################################
+data$ChronicPainOrdinal <- as.factor(data$ChronicPainOrdinal)
+depressed$ChronicPainOrdinal <- as.factor(depressed$ChronicPainOrdinal)
+not_depressed$ChronicPainOrdinal <- as.factor(not_depressed$ChronicPainOrdinal)
 
-# Perform the Cochran-Mantel-Haenszel (CMH) Test
-# This test is used to determine if there is an association between variables, controlling for other factors
-cmh_result <- mantelhaen.test(cmh_table)
+data$PHQ8_score <- as.double(data$PHQ8_score)
+not_depressed$PHQ8_score <- as.double(not_depressed$PHQ8_score)
+depressed$PHQ8_score <- as.double(depressed$PHQ8_score)
+####DENSITY PLOTS - Panel B
+####Distribution of PHQ-8 scores among those who screened positive, grouped by CP
+###########################################################################################
+density_depressed  <-
+  ggplot(data=depressed, aes(x=PHQ8_score, y=ChronicPainOrdinal, fill = ChronicPainOrdinal)) +
+  geom_density_ridges(
+    aes(point_shape = ChronicPainOrdinal, point_fill = ChronicPainOrdinal),
+    alpha=.7, scale =.8) +
+  
+  scale_y_discrete(limits=rev)+
+  scale_x_continuous(limits=c(0,24), expand = c(0,0), breaks = seq(from=0, to=24, by=1)) +
+  scale_fill_paletteer_d("fishualize::Semicossyphus_pulcher", direction = -1)+
+  theme(legend.position = "none")+
+  geom_boxplot(width = .1, alpha = 1.0, lwd=.65, outlier.shape=NA)
+density_depressed
+###########################FIGURE 1 ########################
+###################################################################
+####DENSITY PLOTS Panel D - distribution of PHQ-8 scores  for people who screened negative, grouped by CP 
+###################################################################
+density_not_depressed  <-
+  ggplot(data=not_depressed, aes(x=PHQ8_score, y=ChronicPainOrdinal, fill = ChronicPainOrdinal)) +
+  geom_density_ridges(
+    aes(point_shape = ChronicPainOrdinal, point_fill = ChronicPainOrdinal),
+    alpha=.7, scale =.8) +
+  scale_y_discrete(limits=rev)+
+  scale_x_continuous(limits=c(0,24), expand = c(0,0), breaks = seq(from=0, to=24, by=1)) +
+  scale_fill_paletteer_d("fishualize::Semicossyphus_pulcher", direction = -1)+
+  theme(legend.position = "none")+
+  geom_boxplot(width = .1, alpha = 1.0, lwd=.65, outlier.shape=NA)
+density_not_depressed
 
-# Display the CMH test result
-print(cmh_result)
+###########################FIGURE 2 ########################
+#### RIDGELINE PLOTS - Panel A
+p1<- 
+  ggplot(data, aes(x = somaticsymptoms_proportion, y = PHQ8_score,fill = after_stat(x))) +
+  geom_density_ridges_gradient()+ facet_wrap(~ChronicPainOrdinal)+
+  
+  scale_fill_viridis_c(option = "E", expand = c(0,0),limits=c(0,1))+   
+  coord_cartesian (clip = "off") +
+  theme(panel.spacing = unit(.5,"cm",data = NULL), legend.direction = "horizontal", legend.position = "bottom")+
+  xlim(0,1)
 
-## Pairwise Chi-Square Tests with FDR Correction
-# Extract unique levels of 'subpopulation'
-unique_subpopulations <- levels(cmh_data$subpopulation)
-
-# Create an empty list to store p-values obtained from pairwise comparisons
-p_values <- c()
-
-# Loop over all unique pairs of subpopulations to perform pairwise comparisons
-for (i in 1:(length(unique_subpopulations) - 1)) {
-  for (j in (i + 1):length(unique_subpopulations)) {
-    # Subset data for the two subpopulations being compared
-    sub_data <- cmh_data %>% 
-      filter(subpopulation %in% c(unique_subpopulations[i], unique_subpopulations[j]))
-    
-    # Create a contingency table for severity vs subpopulation for this pair
-    pairwise_table <- xtabs(n_count ~ subpopulation + severity, data = sub_data)
-    
-    # Perform Fisher's exact test on the pairwise contingency table
-    fisher_result <- fisher.test(pairwise_table)
-    
-    # Store the p-value from Fisher's test
-    p_values <- c(p_values, fisher_result$p.value)
-  }
-}
-
-# Display the raw p-values obtained from pairwise Fisher tests
-print(p_values)
-
-# Adjust the p-values using the False Discovery Rate (FDR) correction
-# FDR correction is used to control the Type I error rate when multiple comparisons are made
-p_values_fdr <- p.adjust(p_values, method = "fdr")
-
-# Display the adjusted p-values
-print(p_values_fdr)
-
-# Create a combined table with subpopulation names and corresponding adjusted p-values
-rbind(unique_subpopulations, p_values_fdr)
-
-## Heatmap
-# Create a summary table with proportions for heatmap visualization
-heatmap_data <- cmh_data %>%
-  group_by(subpopulation, symptom_labels, severity) %>%
-  # Sum counts by subpopulation, symptom, and severity
-  summarise(n_count = sum(n_count)) %>%
-  ungroup() %>%
-  group_by(subpopulation, symptom_labels) %>%
-  # Calculate the proportion of each severity level within each subpopulation and symptom combination
-  mutate(proportion = n_count / sum(n_count)) %>%
-  ungroup()
-
-# Create the heatmap visualization
-# The heatmap visualizes the proportion of different severity levels by subpopulation and symptom
-# ggplot2 is used for visualization
-heatmap_plot <- ggplot(heatmap_data, aes(x = subpopulation, y = fct_rev(symptom_labels), fill = proportion)) +
-  geom_tile(color = "white") +
-  facet_wrap(~ severity, ncol = 2) +
-  scale_fill_gradient(low = "white", high = "red", name = "Proportion") +
-  labs(
-    title = "Heatmap of Proportions by Subpopulation, Symptom, and Severity",
-    x = NULL,
-    y = NULL
-  ) +
-  theme_minimal() +
-  guides(fill = guide_colourbar(theme = theme(
-    legend.key.width  = unit(0.5, "lines"),
-    legend.key.height = unit(10, "lines"),
-    legend.ticks = element_line(color = "gray15", linewidth = 0.5),
-    legend.ticks.length = unit(0.5, "lines")))) +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    panel.grid = element_blank(),
-    legend.position = "right"
-  )
-
-# Display the heatmap
-print(heatmap_plot)
-
-# Create a table version of the heatmap data for better interpretability
-# Arrange the data by subpopulation, symptom, and severity
-heatmap_data_table <- heatmap_data %>%
-  arrange(subpopulation, symptom_labels, severity)
-
-# Create a wide-format table suitable for display using gt
-heatmap_data_wide <- heatmap_data %>%
-  pivot_wider(
-    names_from = severity,
-    values_from = c(n_count, proportion),
-    names_glue = "{severity}_{.value}"
-  )
-
-# Create the GT table with a heatmap color scheme and grouped by subpopulation
-heatmap_gt_table_wide <- heatmap_data_wide %>%
-  group_by(subpopulation) %>% 
-  gt() %>%
-  tab_header(
-    title = "Subpopulation, Symptom, and Severity with N and Proportion"
-  ) %>%
-  cols_label(
-    subpopulation = "Subpopulation",
-    symptom_labels = "Symptom",
-    No_n_count = "N",
-    No_proportion = "Proportion",
-    Some_n_count = "N",
-    Some_proportion = "Proportion",
-    Mostly_n_count = "N",
-    Mostly_proportion = "Proportion",
-    Always_n_count = "N",
-    Always_proportion = "Proportion"
-  ) %>%
-  tab_spanner(
-    label = "No",
-    columns = c(No_n_count, No_proportion)
-  ) %>%
-  tab_spanner(
-    label = "Some",
-    columns = c(Some_n_count, Some_proportion)
-  ) %>%
-  tab_spanner(
-    label = "Mostly",
-    columns = c(Mostly_n_count, Mostly_proportion)
-  ) %>%
-  tab_spanner(
-    label = "Always",
-    columns = c(Always_n_count, Always_proportion)
-  ) %>%
-  fmt_number(
-    columns = matches("_proportion"),
-    decimals = 3
-  ) %>%
-  data_color(
-    columns = matches("_proportion"),
-    fn = scales::col_numeric(
-      palette = c("white", "red"),
-      domain = c(0, 1)
-    )
-  ) %>%
-  tab_options(
-    table.font.size = "small",
-    table.align = "center"
-  )
-
-# Print the GT table with heatmap color scheme
-print(heatmap_gt_table_wide)
-
-# Save the GT table as an image (e.g., PNG format)
-gtsave(heatmap_gt_table_wide, filename = "analysis/figures/heatmap_gt_table.png")
+p1 +
+  xlab("") + 
+  ylab("PHQ-8 Score") 
 
 
-#> Set analysis (case oriented)
-#> Profiles like before
-#> Mean severity (bar)
-#> size possibly correlation to CP
-#> severity of symptom is color gradient
+############################FIGURE 2 ########################
+#### SCATTERPLOTS - Panel A
+
+p2<-
+  ggplot(data, aes(x = ChronicPainOrdinal, y = PHQ8_score, color=somaticsymptoms_proportion)) +
+  geom_jitter(alpha=8/20, size=.8) +
+  scale_color_viridis_c( option = "E", limits=c(0,1),direction =1, breaks = seq(from=0, to=1, by=.25))
+p2 + 
+  theme(panel.spacing = unit(.5,"cm",data = NULL), legend.direction = "horizontal", legend.position = "bottom", axis.ticks = element_blank())+
+  xlab("") + 
+  ylab("PHQ-8 Score")
+
+# PNG
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_depression.png",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  dpi = 400
+)
+
+# PDF
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_depression.pdf",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  device = cairo_pdf  # better text rendering
+)
+
+# SVG
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_depression.svg",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  device = "svg"
+)
+
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_Nodepression.png",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  dpi = 400
+)
+
+# PDF
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_Nodepression.pdf",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  device = cairo_pdf  # better text rendering
+)
+
+# SVG
+ggsave(
+  filename = "analysis/figures/fig1_density_plot_Nodepression.svg",
+  plot = last_plot(),
+  width = 4, height = 6,  # Adjust dimensions as needed
+  device = "svg"
+)
+
