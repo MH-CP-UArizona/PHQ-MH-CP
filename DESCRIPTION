@@ -1,11 +1,15 @@
-Package: TemplateCompendium
-Title: "Research compendium for the project TBD"
-Version: 1.0.0
+Package: PHQ-MH-CP
+Title: "Research compendium for PHQ-MH-CP"
+Version: 0.0.1 (Pre-release)
 Authors:
-    person(given = "First",
-           family = "Last", "email@arizona.edu", role = c("aut", "cre"))
-Maintainer: First Last <email@arizona.edu> 
-Description: Research compendium for the project: Template
+    person(given = "Greg",
+           family = "Chism", "gchism@arizona.edu", role = c("aut", "cre"))
+    person(given = "Katherine",
+           family = "Herder", "keherder@arizona.edu", role = c("aut", "cre"))
+    person(given = "Jennifer",
+           family = "De La Rosa", "jschult1@arizona.edu", role = c("aut", "cre"))
+Maintainer: Greg Chism <gchism@arizona.edu> 
+Description: Research compendium for the project: Reliability and equivalence of the 8-item version of the Patient Health Questionnaire (PHQ-8) to screen for depressive symptoms in adults with chronic pain: A representative U.S. population study 
 License: GPLv3 + file LICENSE
 ByteCompile: true
 Encoding: UTF-8
@@ -19,5 +23,5 @@ Suggests:
     git2r,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-URL: https://github.com/Gchism94/template-compendium
-BugReports: https://github.com/Gchism94/template-compendium/issues
+URL: https://github.com/MH-CP-UArizona/PHQ-MH-CP
+BugReports: https://github.com/MH-CP-UArizona/PHQ-MH-CP/issues
